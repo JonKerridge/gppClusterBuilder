@@ -1,0 +1,63 @@
+package baseFiles
+
+import gppClusterBuilder.LoaderConstants
+import jcsp.lang.*
+import jcsp.net2.*
+
+class BasicHostProcess implements CSProcess, LoaderConstants{
+  String hostIP
+  List <String> nodeIPs
+  NetChannelInput nodes2host
+  List <NetChannelOutput> host2nodes
+
+  @Override
+  void run() {
+    int nodes_Number = nodeIPs.size()
+    // create basic process connections for host
+    for ( n in 0 ..< nodes_Number) {
+      // wait for all nodes to start
+      assert nodes2host.read() == nodeProcessInitiation :
+        "Node ${nodeIPs[n]} failed to initialise node process"
+      // create host2nodes channels - already have node IPs
+     }
+    long initialTime = System.currentTimeMillis()
+    // send application channel data to nodes - inserted by Builder - also those at host
+    List inputVCNs   // each node gets a list of input VCNs
+    //@inputVCNs
+
+    for ( n in 0 ..< nodes_Number) host2nodes[n].write(inputVCNs[n])
+
+    //@hostInputs
+
+    // now read acknowledgments
+    for ( n in 0 ..< nodes_Number){
+      assert nodes2host.read() == nodeApplicationInChannelsCreated :
+          "Node ${nodeIPs[n]} failed to create node to host link channels"
+    }
+    // each node gets a list [IP, vcn] to which it is connected
+    List outputVCNs
+    //@outputVCNs
+
+    for ( n in 0 ..< nodes_Number) host2nodes[n].write(outputVCNs[n])
+
+    //@hostOutputs
+
+    // now read acknowledgments
+    for ( n in 0 ..< nodes_Number){
+      assert nodes2host.read() == nodeApplicationOutChannelsCreated :
+          "Node ${nodeIPs[n]} failed to create node to host link channels"
+    }
+    // all the net application channels have been created
+    long processStart = System.currentTimeMillis()
+    // now start the process - inserted by builder
+    //@hostProcess
+
+
+    long processEnd = System.currentTimeMillis()
+    List times = [ ["Host", (processStart - initialTime), (processEnd - processStart)] ]
+    for ( n in 0 ..< nodes_Number){
+      times << (List)(nodes2host.read() )
+    }
+    times.each {println "$it"}
+  }
+}

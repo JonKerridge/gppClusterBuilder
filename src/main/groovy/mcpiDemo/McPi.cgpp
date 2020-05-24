@@ -1,0 +1,52 @@
+package mcpiDemo
+
+import groovyParallelPatterns.DataDetails
+import groovyParallelPatterns.ResultDetails
+import groovyParallelPatterns.cluster.connectors.NodeRequestingFanAny
+import groovyParallelPatterns.cluster.connectors.OneNodeRequestedList
+import groovyParallelPatterns.connectors.reducers.AnyFanOne
+import groovyParallelPatterns.functionals.groups.AnyGroupAny
+import groovyParallelPatterns.terminals.Collect
+import groovyParallelPatterns.terminals.Emit
+
+int cores = 2
+int clusters = 2
+
+//@emit
+def emitDetails = new DataDetails(
+    dName: MCpiData.getName(),
+    dInitMethod: MCpiData.init,
+    dInitData: [1024],
+    dCreateMethod: MCpiData.create,
+    dCreateData: [100000]
+)
+def emit = new Emit (
+    eDetails: emitDetails
+)
+def onrl = new OneNodeRequestedList()
+
+//@cluster 2
+def nrfa = new NodeRequestingFanAny(
+    destinations: cores
+)
+def group = new AnyGroupAny(
+    workers: cores,
+    function: SerializedMCpiData.withinOp
+)
+def afo1 = new AnyFanOne(
+    sources: cores
+)
+
+//@collect
+def resultDetails = new ResultDetails(
+    rName: MCpiResultsSerialised.getName(),
+    rInitMethod: MCpiResultsSerialised.init,
+    rCollectMethod: MCpiResultsSerialised.collector,
+    rFinaliseMethod: MCpiResultsSerialised.finalise
+)
+def afo2 = new AnyFanOne(
+    sources: nodes
+)
+def collector = new Collect(
+    rDetails: resultDetails
+)
