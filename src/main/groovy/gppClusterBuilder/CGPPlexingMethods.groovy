@@ -6,11 +6,7 @@ class CGPPlexingMethods {
 
   String error = ""
 
-  String preNetwork = "\n"
-  String network = "\n"
-  String postNetwork = "\n"
 
-//  String logChanAdd = "    visLogChan : logChan.out(),\n"
 
   def processNames = []
   def chanNumber = 1
@@ -26,11 +22,22 @@ class CGPPlexingMethods {
   List <String> hostLoaderText = []
   List <String> hostProcessText = []
 
+  // source inserts into node and host processes
+  List <String>  nodeInputInsert = ["//nodeInputInsert\n"]
+  List <String>  nodeOutputInsert = ["//nodeOutputInsert\n"]
+  List <String>  nodeProcessInsert = ["//nodeProcessInsert\n"]
+  List <String>  hostNodeInputInsert = ["//hostNodeInputInsert\n"]
+  List <String>  hostInputInsert = ["//hostInputInsert\n"]
+  List <String>  hostNodeOutputInsert = ["//hostNodeOutputInsert\n"]
+  List <String>  hostOutputInsert = ["//hostOutputInsert\n"]
+  List <String>  hostProcessInsert = ["//hostProcessInsert\n"]
+
   // extracted value from input script
   List <String> commonDeclarations = ["\n"]
   List <Integer> clusterSizes = []  // in case we have more than one cluster definition
   int emitStart, emitEnd, collectStart, collectEnd
   List<List<Integer>> clusterLocations = []
+
   // resultants scripts
   List <String> nodeLoaderOutText = []
   List <String> nodeProcessOutText = []
@@ -48,9 +55,6 @@ class CGPPlexingMethods {
 
   boolean pattern = false
   boolean logging = false
-
-//  //SH added: need logFileName gppVis command readLog()
-//  String logFileName
 
   // file inputs and outputs
 
@@ -92,7 +96,6 @@ class CGPPlexingMethods {
     }
     hostProcessReader.close()
 
-
     // copy package line and jcsp imports to output script texts
     nodeLoaderOutText << scriptText[0] + "\n\n"
     nodeLoaderOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
@@ -111,14 +114,10 @@ class CGPPlexingMethods {
   } // end of getInputs
 
   def putOutputs(
-      FileWriter nodeLoaderWriter,
-      FileWriter nodeProcessWriter,
-      FileWriter hostLoaderWriter,
-      FileWriter hostProcessWriter  ) {
-//    // now copy the source strings to outText
-//    outText << preNetwork
-//    outText << network
-//    outText << postNetwork
+    FileWriter nodeLoaderWriter,
+    FileWriter nodeProcessWriter,
+    FileWriter hostLoaderWriter,
+    FileWriter hostProcessWriter  ) {
     // now copy all the OutText to their output file
     nodeLoaderOutText.each { line -> nodeLoaderWriter.write(line)
     }
@@ -160,8 +159,6 @@ class CGPPlexingMethods {
       commonDeclarations <<  scriptText[scriptCurrentLine]
       scriptCurrentLine++
     }
-//    println "Common Declarations"
-//    commonDeclarations.each{println "\t$it"}
     // now search for //@clusters line in script
     int cLine = scriptCurrentLine
     while ( cLine < scriptText.size()){
@@ -170,7 +167,6 @@ class CGPPlexingMethods {
       }
       cLine++
     }
-//    println "Cluster Sizes are $clusterSizes"
     // now find the start and end line of each section in script
     cLine = scriptCurrentLine
     while (!(scriptText[cLine].startsWith("//@emit"))) cLine++
@@ -243,6 +239,9 @@ class CGPPlexingMethods {
     }
     nodeProcessOutText << nodeProcessText[nodeProcessLine] + "\n"
     // TODO copy node inputVCNs creation code
+    nodeInputInsert.each{line ->
+      nodeProcessOutText << line + "\n"
+    }
 
     // find the //@outputVCNs line and copy to output
     nodeProcessLine++
@@ -252,6 +251,9 @@ class CGPPlexingMethods {
     }
     nodeProcessOutText << nodeProcessText[nodeProcessLine] + "\n"
     // TODO copy node outputVCNs creation code
+    nodeOutputInsert.each{line ->
+      nodeProcessOutText << line + "\n"
+    }
 
     // find the //@nodeProcess line and copy to output
     nodeProcessLine++
@@ -261,6 +263,9 @@ class CGPPlexingMethods {
     }
     nodeProcessOutText << nodeProcessText[nodeProcessLine] + "\n"
     // TODO copy node nodeProcess creation code
+    nodeProcessInsert.each{line ->
+      nodeProcessOutText << line + "\n"
+    }
 
     // now copy rest of nodeProcess text
     nodeProcessLine++
@@ -293,6 +298,9 @@ class CGPPlexingMethods {
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
     // TODO copy host inputVCNs creation code
+    hostNodeInputInsert.each{line ->
+      hostProcessOutText << line + "\n"
+    }
 
     // find the //@hostInputs line and copy to output
     hostProcessLine++
@@ -302,6 +310,9 @@ class CGPPlexingMethods {
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
     // TODO copy host hostInputs creation code
+    hostInputInsert.each{line ->
+      hostProcessOutText << line + "\n"
+    }
 
     // find the //@outputVCNs line and copy to output
     hostProcessLine++
@@ -311,6 +322,9 @@ class CGPPlexingMethods {
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
     // TODO copy host outputVCNs creation code
+    hostNodeOutputInsert.each{line ->
+      hostProcessOutText << line + "\n"
+    }
 
     // find the //@hostOutputs line and copy to output
     hostProcessLine++
@@ -320,6 +334,9 @@ class CGPPlexingMethods {
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
     // TODO copy host hostOutputs creation code
+    hostOutputInsert.each{line ->
+      hostProcessOutText << line + "\n"
+    }
 
     // find the //@hostProcess line and copy to output
     hostProcessLine++
@@ -329,6 +346,9 @@ class CGPPlexingMethods {
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
     // TODO copy host hostProcess creation code
+    hostProcessInsert.each{line ->
+      hostProcessOutText << line + "\n"
+    }
 
     // now copy rest of hostProcess text
     hostProcessLine++
@@ -337,48 +357,17 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     
-  } // end of initialiseProcesses
+  } // end of completeProcesses
 
-  def processPostNetwork = {
-
-//    //SH added
-//    if (logging) {
-//      postNetwork += "//gppVis command\n"
-//      postNetwork += "//short delay to give JavaFx time to start up.\n"
-//      postNetwork += "sleep(2000)\n"
-//      postNetwork += "Platform.runLater(new Runnable() {\n"
-//      postNetwork += "	@Override\n"
-//      postNetwork += "	void run() {\n"
-//      postNetwork += "		Visualiser.networkScene($logFileName)\n"
-//      postNetwork += "	}\n"
-//      postNetwork += "}) \n"
+//  def processPostNetwork = {
+//    if (!pattern) postNetwork += "PAR network = new PAR()\n network = new PAR($processNames)\n network.run()\n network.removeAllProcesses()" else postNetwork += "${processNames[0]}.run()\n"
+//    postNetwork += "\n//END\n\n"
 //
-//      postNetwork += "\n//short delay to give JavaFx time to display.\n"
-//      postNetwork += "sleep(3000) \n\n"
+//    while (scriptCurrentLine < inText.size()) {
+//      postNetwork += inText[scriptCurrentLine] + "\n"
+//      scriptCurrentLine++
 //    }
-
-    if (!pattern) postNetwork += "PAR network = new PAR()\n network = new PAR($processNames)\n network.run()\n network.removeAllProcesses()" else postNetwork += "${processNames[0]}.run()\n"
-    postNetwork += "\n//END\n\n"
-
-//    //SH added
-//    if (logging) {
-//      postNetwork += "//gppVis command\n"
-//      postNetwork += "//Now that the network has completed, tell the vis where the log file is so it\n"
-//      postNetwork += "//can access the data so it can replay it.\n"
-//      postNetwork += "Platform.runLater(new Runnable() {\n"
-//      postNetwork += "	@Override\n"
-//      postNetwork += "	void run() {\n"
-//      postNetwork += "		Visualiser.readLog(\"" + logFileName.replace("\"", "") + "log.csv\")\n"
-//      postNetwork += "	}\n"
-//      postNetwork += "}) \n"
-//    }
-
-
-    while (scriptCurrentLine < inText.size()) {
-      postNetwork += inText[scriptCurrentLine] + "\n"
-      scriptCurrentLine++
-    }
-  } // end of processPostNetwork
+//  } // end of processPostNetwork
 
 
   // channel processing closures

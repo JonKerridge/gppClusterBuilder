@@ -72,8 +72,8 @@ class CGPPlexFileHanding {
 		gppLex.with{
 			extractAppStructure()
 			processLoaders()
-//			createNodeInserts()
-//			createHostInserts()
+//			createNodeProcessInserts()
+//			createHostProcessInserts()
 			completeProcesses()
 		}
 		writeOutFiles()

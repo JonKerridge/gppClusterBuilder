@@ -39,6 +39,8 @@ node2host.write(nodeProcessInitiation)
 // read in application net input channel VCNs [ vcn, ... ]
 List inputVCNs = fromHost.read() as List
 //@inputVCNs
+//nodeInputInsert
+
  
 // acknowledge creation of net input channels
 node2host.write(nodeApplicationInChannelsCreated)
@@ -46,12 +48,16 @@ node2host.write(nodeApplicationInChannelsCreated)
 // read in application net output channel locations [ [ip, vcn], ... ]
 List outputVCNs = fromHost.read()
 //@outputVCNs
+//nodeOutputInsert
+
  
 // acknowledge creation of net output channels
 node2host.write(nodeApplicationOutChannelsCreated)
 long processStart = System.currentTimeMillis()
 // now start the process - inserted by builder
 //@nodeProcess
+//nodeProcessInsert
+
  
 long processEnd = System.currentTimeMillis()
 node2host.write([nodeIP, (processStart - initialTime), (processEnd - processStart)])
