@@ -34,7 +34,7 @@ class CGPPlexingMethods {
   List <String>  hostProcessChannelInsert = ["//host Process Channel Insert\n"]
   List <String>  hostProcessParInsert = ["//host ProcessPar Insert\n"]
 
-  // extracted value from input script
+  // extracted values from input script
   List <String> commonDeclarations = ["\n"]
 
   int emitStart, emitEnd, collectStart, collectEnd, clusterStart, clusterEnd, clusterSize
@@ -163,7 +163,6 @@ class CGPPlexingMethods {
       scriptCurrentLine++
     }
 
-    //TODO modify for only one cluster
     // now search for //@clusters line in script
     int cLine = scriptCurrentLine
     while ( cLine < scriptText.size()){
@@ -178,7 +177,6 @@ class CGPPlexingMethods {
     emitStart = cLine + 1
     cLine++
 
-    //TODO modify for only one cluster
     while (!(scriptText[cLine].startsWith("//@cluster"))) cLine++
     clusterStart = cLine + 1
     emitEnd = cLine - 1
@@ -192,7 +190,7 @@ class CGPPlexingMethods {
     println "Cluster: $clusterStart, $clusterEnd Size is $clusterSize"
     println "Collect: $collectStart, $collectEnd"
     // have now collected the separate parts of the script including multiple clusters
-  } //end of processImports
+  } //end of extractAppStructure
 
   def processLoaders = {
     // find start of class, replace Basic with appName and copy to nodeLoaderOutText
@@ -240,7 +238,7 @@ class CGPPlexingMethods {
       nodeProcessLine++
     }
     nodeProcessOutText << nodeProcessText[nodeProcessLine] + "\n"
-    // TODO copy node inputVCNs creation code
+    // copy node inputVCNs creation code
     nodeInputInsert.each{line ->
       nodeProcessOutText << line + "\n"
     }
@@ -252,7 +250,7 @@ class CGPPlexingMethods {
       nodeProcessLine++
     }
     nodeProcessOutText << nodeProcessText[nodeProcessLine] + "\n"
-    // TODO copy node outputVCNs creation code
+    // copy node outputVCNs creation code
     nodeOutputInsert.each{line ->
       nodeProcessOutText << line + "\n"
     }
@@ -264,7 +262,7 @@ class CGPPlexingMethods {
       nodeProcessLine++
     }
     nodeProcessOutText << nodeProcessText[nodeProcessLine] + "\n"
-    // TODO copy node nodeProcess creation code
+    // copy node nodeProcess creation code
     nodeProcessInsert.each{line ->
       nodeProcessOutText << line + "\n"
     }
@@ -347,12 +345,12 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
-    // TODO copy host hostProcessChannel creation code
+    // copy host hostProcessChannel creation code
     hostProcessChannelInsert.each{ line ->
       hostProcessOutText << line + "\n"
     }
 
-    // TODO copy host hostProcessPAR creation code
+    // copy host hostProcessPAR creation code
     hostProcessParInsert.each {line ->
       hostProcessOutText << line + "\n"
     }
@@ -367,7 +365,7 @@ class CGPPlexingMethods {
 
   // processes that extract source from script
 
-  //TODO extract emit inserts
+  // extract emit inserts
   def createHostProcessEmitInserts = {
     scriptCurrentLine = emitStart
     while (!(scriptText[scriptCurrentLine] =~ /Emit/)){
