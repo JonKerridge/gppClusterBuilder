@@ -54,7 +54,7 @@ class BasicHostProcess implements CSProcess, LoaderConstants{
 
 
     long processEnd = System.currentTimeMillis()
-    List times = [ ["Host", (processStart - initialTime), (processEnd - processStart)] ]
+    List times = [ ["\n Times  Load  Process\nHost", (processStart - initialTime), (processEnd - processStart)] ]
     for ( n in 0 ..< nodes_Number){
       times << (List)(nodes2host.read() )
     }

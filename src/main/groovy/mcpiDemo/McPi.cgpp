@@ -13,6 +13,7 @@ int cores = 2
 int clusters = 2
 
 //@emit
+
 def emitDetails = new DataDetails(
     dName: MCpiData.getName(),
     dInitMethod: MCpiData.init,
@@ -20,12 +21,15 @@ def emitDetails = new DataDetails(
     dCreateMethod: MCpiData.create,
     dCreateData: [100000]
 )
+
 def emit = new Emit (
     eDetails: emitDetails
 )
+
 def onrl = new OneNodeRequestedList()
 
 //@cluster 2
+
 def nrfa = new NodeRequestingFanAny(
     destinations: cores
 )
@@ -38,15 +42,18 @@ def afo1 = new AnyFanOne(
 )
 
 //@collect
+
 def resultDetails = new ResultDetails(
     rName: MCpiResultsSerialised.getName(),
     rInitMethod: MCpiResultsSerialised.init,
     rCollectMethod: MCpiResultsSerialised.collector,
     rFinaliseMethod: MCpiResultsSerialised.finalise
 )
+
 def afo2 = new AnyFanOne(
-    sources: nodes
+    sources: clusters
 )
+
 def collector = new Collect(
     rDetails: resultDetails
 )

@@ -42,8 +42,8 @@ enum PCA {				// ProcessChannelArity
 	OneFbackOneOne,		// Root
 	OneFbackOne,		// FeedbackBool, FeedbackObject
 	
-	RequestAny,			// RequestingFanAny, RequestingSeqCastAny, NodeRequestingFanAny, NodeRequestingSeqCastAny
-	RequestList,		// RequestingFanList, RequestParCastList, RequestSeqCastList, NodeRequestingFanList, NodeRequestParCastList, NodeRequestSeqCastList
+	RequestAny,			// NodeRequestingFanAny, NodeRequestingSeqCastAny
+	RequestList,		// NodeRequestingFanList, NodeRequestParCastList, NodeRequestSeqCastList
 	ListRequested		// OneNodeRequestedList
 }
 

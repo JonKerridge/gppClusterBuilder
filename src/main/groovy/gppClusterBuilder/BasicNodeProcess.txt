@@ -33,6 +33,7 @@ class BasicNodeProcess implements CSProcess, Serializable, NodeConnection, Loade
 
     // acknowledge creation of net output channels
     node2host.write(nodeApplicationOutChannelsCreated)
+    println "Node starting application process"
     long processStart = System.currentTimeMillis()
     // now start the process - inserted by builder
     //@nodeProcess

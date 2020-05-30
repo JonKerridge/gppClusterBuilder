@@ -4,88 +4,88 @@ import GPP_Builder.PCA;
 
 /**
  * ChanArityMap provides a map of the processes to their PCA enumeration
- *
- */
+ **/
 class ChanArityMap {
-	static Map arityMap = [ "Emit" : PCA.NoneOne,
-						    "EmitWithLocal" : PCA.NoneOne,
-							
-							"ListGroupCollect" : PCA.ListNone,
-							
-							"Collect" : PCA.OneNone,
-							"OnePipelineCollect" : PCA.OneNone,
-							"CollectUI" : PCA.OneNone,
-							"TestPoint" : PCA.OneNone,
-							
-							"GroupOfPipelineCollects" : PCA.AnyNone,
-                          "PipelineOfGroupCollects" : PCA.AnyNone,
+  static Map arityMap =
+      ["Emit"                    : PCA.NoneOne,
+       "EmitWithLocal"           : PCA.NoneOne,
 
-                          "EmitWithFeedback" : PCA.NoneFbackOne,
+       "ListGroupCollect"        : PCA.ListNone,
 
-                          "AnyFanAny" : PCA.AnyAny,
-                          "AnySeqCastAny" : PCA.AnyAny,
+       "Collect"                 : PCA.OneNone,
+       "OnePipelineCollect"      : PCA.OneNone,
+       "CollectUI"               : PCA.OneNone,
+       "TestPoint"               : PCA.OneNone,
 
-                          "PipelineOfGroups" : PCA.AnyAnyProps,
-                          "AnyGroupAny" : PCA.AnyAnyProps,
+       "GroupOfPipelineCollects" : PCA.AnyNone,
+       "PipelineOfGroupCollects" : PCA.AnyNone,
 
-                          "AnyGroupList" : PCA.AnyList,
+       "EmitWithFeedback"        : PCA.NoneFbackOne,
 
-                          "AnyFanOne" : PCA.AnyOne,
+       "AnyFanAny"               : PCA.AnyAny,
+       "AnySeqCastAny"           : PCA.AnyAny,
 
-                          "OneFanAny" : PCA.OneAny,
-                          "OneFanRequestedAny" : PCA.OneAnyAny,
-                          "OneSeqCastAny" : PCA.OneAny,
-                          "Node" : PCA.OneAny,
+       "PipelineOfGroups"        : PCA.AnyAnyProps,
+       "AnyGroupAny"             : PCA.AnyAnyProps,
 
-                          "OneDirectedList" : PCA.OneListProps,
-                          "OneIndexedList" : PCA.OneListProps,
+       "AnyGroupList"            : PCA.AnyList,
 
-                          "OneFanList" : PCA.OneList,
-                          "OneParCastList" : PCA.OneList,
-                          "OneSeqCastList" : PCA.OneList,
+       "AnyFanOne"               : PCA.AnyOne,
 
-                          "BasicDandC" : PCA.OneOne,
-                          "Mapper" : PCA.OneOne,
-                          "OnePipelineOne" : PCA.OneOne,
-                          "EmitFromInput" : PCA.OneOne,
-                          "CombineNto1" : PCA.OneOne,
-                          "ThreePhaseWorker" : PCA.OneOne,
-                          "WorkerTerminating" : PCA.OneOne,
+       "OneFanAny"               : PCA.OneAny,
+//                         "OneFanRequestedAny"      : PCA.OneAnyAny,
+       "OneSeqCastAny"           : PCA.OneAny,
+       "Node"                    : PCA.OneAny,
 
-                          "ListGroupAny" : PCA.ListAny,
+       "OneDirectedList"         : PCA.OneListProps,
+       "OneIndexedList"          : PCA.OneListProps,
 
-                          "GroupOfPipelines" : PCA.ListList,
-                          "ListGroupList" : PCA.ListList,
-                          "ListMapList" : PCA.ListList,
-                          "ListReduceList" : PCA.ListNEList,
-                          "ListOneMapManyList": PCA.ListNEList,
-                          "ListThreePhaseWorkerList" : PCA.ListList,
+       "OneFanList"              : PCA.OneList,
+       "OneParCastList"          : PCA.OneList,
+       "OneSeqCastList"          : PCA.OneList,
 
-                          "ListFanOne" : PCA.ListOne,
-                          "ListParOne" : PCA.ListOne,
-                          "ListSeqOne" : PCA.ListOne,
-                          "N_WayMerge" : PCA.ListOneProps,
-                          "Reducer" : PCA.ListOneProps,
+       "BasicDandC"              : PCA.OneOne,
+       "Mapper"                  : PCA.OneOne,
+       "OnePipelineOne"          : PCA.OneOne,
+       "EmitFromInput"           : PCA.OneOne,
+       "CombineNto1"             : PCA.OneOne,
+       "ThreePhaseWorker"        : PCA.OneOne,
+       "WorkerTerminating"       : PCA.OneOne,
 
-                          "Root" : PCA.OneFbackOneOne,
-                          "FeedbackBool" : PCA.OneFbackOne,
-                          "FeedbackObject" : PCA.OneFbackOne,
+       "ListGroupAny"            : PCA.ListAny,
 
-                          "RequestingFanAny" : PCA.RequestAny,
-                          "RequestingSeqCastAny" : PCA.RequestAny,
-                          "NodeRequestingFanAny" : PCA.RequestAny,
-                          "NodeRequestingSeqCastAny" : PCA.RequestAny,
+       "GroupOfPipelines"        : PCA.ListList,
+       "ListGroupList"           : PCA.ListList,
+       "ListMapList"             : PCA.ListList,
+       "ListReduceList"          : PCA.ListNEList,
+       "ListOneMapManyList"      : PCA.ListNEList,
+       "ListThreePhaseWorkerList": PCA.ListList,
 
-                          "RequestingFanList" : PCA.RequestList,
-                          "RequestParCastList" : PCA.RequestList,
-                          "RequestSeqCastList" : PCA.RequestList,
-                          "NodeRequestingFanList" : PCA.RequestList,
-                          "NodeRequestParCastList" : PCA.RequestList,
-                          "NodeRequestSeqCastList" : PCA.RequestList,
+       "ListFanOne"              : PCA.ListOne,
+       "ListParOne"              : PCA.ListOne,
+       "ListSeqOne"              : PCA.ListOne,
+       "N_WayMerge"              : PCA.ListOneProps,
+       "Reducer"                 : PCA.ListOneProps,
 
-                          "OneNodeRequestedList" : PCA.ListRequested
-							
-						]
-	
-	
-	}
+       "Root"                    : PCA.OneFbackOneOne,
+       "FeedbackBool"            : PCA.OneFbackOne,
+       "FeedbackObject"          : PCA.OneFbackOne,
+
+       "RequestingFanAny"        : PCA.RequestAny,
+       "RequestingSeqCastAny"    : PCA.RequestAny,
+       "NodeRequestingFanAny"    : PCA.RequestAny,
+       "NodeRequestingSeqCastAny": PCA.RequestAny,
+
+       "RequestingFanList"       : PCA.RequestList,
+       "RequestParCastList"      : PCA.RequestList,
+       "RequestSeqCastList"      : PCA.RequestList,
+       "NodeRequestingFanList"   : PCA.RequestList,
+       "NodeRequestParCastList"  : PCA.RequestList,
+       "NodeRequestSeqCastList"  : PCA.RequestList,
+
+       "OneNodeRequestedList"    : PCA.ListRequested
+
+      ]
+
+
+}

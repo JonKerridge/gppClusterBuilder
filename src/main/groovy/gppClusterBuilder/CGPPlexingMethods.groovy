@@ -5,10 +5,11 @@ import GPP_Builder.ChanTypeEnum
 class CGPPlexingMethods {
 
   String error = ""
+  String network = ""
+  String preNetwork = ""
 
-
-
-  def processNames = []
+  def hostProcessNames = []
+  def nodeProcessNames = []
   def chanNumber = 1
   String currentOutChanName = "chan$chanNumber"
   String currentInChanName = "chan$chanNumber"
@@ -23,20 +24,22 @@ class CGPPlexingMethods {
   List <String> hostProcessText = []
 
   // source inserts into node and host processes
-  List <String>  nodeInputInsert = ["//nodeInputInsert\n"]
-  List <String>  nodeOutputInsert = ["//nodeOutputInsert\n"]
-  List <String>  nodeProcessInsert = ["//nodeProcessInsert\n"]
-  List <String>  hostNodeInputInsert = ["//hostNodeInputInsert\n"]
-  List <String>  hostInputInsert = ["//hostInputInsert\n"]
-  List <String>  hostNodeOutputInsert = ["//hostNodeOutputInsert\n"]
-  List <String>  hostOutputInsert = ["//hostOutputInsert\n"]
-  List <String>  hostProcessInsert = ["//hostProcessInsert\n"]
+  List <String>  nodeInputInsert = ["//node Input Insert\n"]
+  List <String>  nodeOutputInsert = ["//node Output Insert\n"]
+  List <String>  nodeProcessInsert = ["//node Process Insert\n"]
+  List <String>  hostNodeInputInsert = ["//host NodeInput Insert\n"]
+  List <String>  hostInputInsert = ["//host Input Insert\n"]
+  List <String>  hostNodeOutputInsert = ["//host NodeOutput Insert\n"]
+  List <String>  hostOutputInsert = ["//host Output Insert\n"]
+  List <String>  hostProcessChannelInsert = ["//host Process Channel Insert\n"]
+  List <String>  hostProcessParInsert = ["//host ProcessPar Insert\n"]
 
   // extracted value from input script
   List <String> commonDeclarations = ["\n"]
-  List <Integer> clusterSizes = []  // in case we have more than one cluster definition
-  int emitStart, emitEnd, collectStart, collectEnd
-  List<List<Integer>> clusterLocations = []
+
+  int emitStart, emitEnd, collectStart, collectEnd, clusterStart, clusterEnd, clusterSize
+
+  Range emitInRange, nodeInRange, collectInRange
 
   // resultants scripts
   List <String> nodeLoaderOutText = []
@@ -54,7 +57,7 @@ class CGPPlexingMethods {
   int endLine = 0
 
   boolean pattern = false
-  boolean logging = false
+//  boolean logging = false
 
   // file inputs and outputs
 
@@ -159,11 +162,13 @@ class CGPPlexingMethods {
       commonDeclarations <<  scriptText[scriptCurrentLine]
       scriptCurrentLine++
     }
+
+    //TODO modify for only one cluster
     // now search for //@clusters line in script
     int cLine = scriptCurrentLine
     while ( cLine < scriptText.size()){
       if (scriptText[cLine].startsWith("//@cluster")){
-        clusterSizes << Integer.parseInt(scriptText[cLine].substring(11))
+        clusterSize = Integer.parseInt(scriptText[cLine].substring(11))
       }
       cLine++
     }
@@ -172,22 +177,19 @@ class CGPPlexingMethods {
     while (!(scriptText[cLine].startsWith("//@emit"))) cLine++
     emitStart = cLine + 1
     cLine++
+
+    //TODO modify for only one cluster
     while (!(scriptText[cLine].startsWith("//@cluster"))) cLine++
-    int clusterStart = cLine + 1
+    clusterStart = cLine + 1
     emitEnd = cLine - 1
     cLine++
-    while (!(scriptText[cLine].startsWith("//@"))) cLine++   // either //@cluster or //@collect
-    clusterLocations << [clusterStart, cLine-1]
-    while (scriptText[cLine].startsWith("//@cluster")){
-      clusterStart = cLine + 1
-      cLine++
-      while (!(scriptText[cLine].startsWith("//@"))) cLine++   // either //@cluster or //@collect
-      clusterLocations << [clusterStart, cLine-1]
-    }
+
+    while (!(scriptText[cLine].startsWith("//@collect"))) cLine++
+    clusterEnd = cLine - 1
     collectStart = cLine+1
     collectEnd = scriptText.size() - 1
     println "Emit: $emitStart, $emitEnd"
-    println "Clusters: $clusterLocations, Sizes are $clusterSizes"
+    println "Cluster: $clusterStart, $clusterEnd Size is $clusterSize"
     println "Collect: $collectStart, $collectEnd"
     // have now collected the separate parts of the script including multiple clusters
   } //end of processImports
@@ -217,7 +219,7 @@ class CGPPlexingMethods {
   }
 
   def completeProcesses = {
-    // find start of nodeProcess class, replace Basic with appName and copy to nodeLoaderOutText
+    // find start of nodeProcess class, replace Basic with appName and copy to nodeProcessOutText
     while (!(nodeProcessText[nodeProcessLine].startsWith("class"))) nodeProcessLine++
     nodeProcessOutText << nodeProcessText[nodeProcessLine].replace("Basic", appName) + "\n"
     // find the run() method declaration
@@ -345,8 +347,13 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
-    // TODO copy host hostProcess creation code
-    hostProcessInsert.each{line ->
+    // TODO copy host hostProcessChannel creation code
+    hostProcessChannelInsert.each{ line ->
+      hostProcessOutText << line + "\n"
+    }
+
+    // TODO copy host hostProcessPAR creation code
+    hostProcessParInsert.each {line ->
       hostProcessOutText << line + "\n"
     }
 
@@ -356,19 +363,86 @@ class CGPPlexingMethods {
       hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
       hostProcessLine++
     }
-    
   } // end of completeProcesses
 
-//  def processPostNetwork = {
-//    if (!pattern) postNetwork += "PAR network = new PAR()\n network = new PAR($processNames)\n network.run()\n network.removeAllProcesses()" else postNetwork += "${processNames[0]}.run()\n"
-//    postNetwork += "\n//END\n\n"
-//
-//    while (scriptCurrentLine < inText.size()) {
-//      postNetwork += inText[scriptCurrentLine] + "\n"
-//      scriptCurrentLine++
-//    }
-//  } // end of processPostNetwork
+  // processes that extract source from script
 
+  //TODO extract emit inserts
+  def createHostProcessEmitInserts = {
+    scriptCurrentLine = emitStart
+    while (!(scriptText[scriptCurrentLine] =~ /Emit/)){
+      preNetwork += scriptText[scriptCurrentLine] +"\n"
+      scriptCurrentLine++
+    }
+    // should now have emit process definition
+    boolean processing = true
+    while (processing) {
+      List rvs = findProcDef(scriptCurrentLine)
+      if (rvs == null) break
+      endLine = rvs[0]
+      String processName = rvs[1]
+      hostProcessNames << rvs[2]
+      "$processName"(processName, scriptCurrentLine, endLine)
+      scriptCurrentLine = endLine + 1
+      if ( !findNextProc(emitEnd) ) processing = false
+    }
+    hostProcessChannelInsert << preNetwork + "\n"
+    hostProcessParInsert << network + "\n"
+    network = ""
+    preNetwork = ""
+  }
+  //TODO extract cluster inserts
+  def createClusterProcessInserts = {
+    scriptCurrentLine = clusterStart
+    while (!(scriptText[scriptCurrentLine] =~ /Requesting/)){
+      preNetwork += scriptText[scriptCurrentLine] +"\n"
+      scriptCurrentLine++
+    }
+    // should now have emit process definition
+    boolean processing = true
+    while (processing) {
+      List rvs = findProcDef(scriptCurrentLine)
+      if (rvs == null) break
+      endLine = rvs[0]
+      String processName = rvs[1]
+      nodeProcessNames << rvs[2]
+      "$processName"(processName, scriptCurrentLine, endLine)
+      scriptCurrentLine = endLine + 1
+      if ( !findNextProc(clusterEnd) ) processing = false
+    }
+    nodeProcessInsert << preNetwork + "\n"
+    nodeProcessInsert << network + "\n"
+    nodeProcessInsert << "\nnew PAR($nodeProcessNames).run()\n"
+    network = ""
+    preNetwork = ""
+  }
+  //TODO extract collect process inserts
+  def createHostProcessCollectInserts = {
+    scriptCurrentLine = collectStart
+    while (!(scriptText[scriptCurrentLine] =~ /One/)){  // excludes N-WayMerge as first reducer in Collect
+      preNetwork += scriptText[scriptCurrentLine] +"\n"
+      scriptCurrentLine++
+    }
+    // should now have reducer process definition
+    boolean processing = true
+    while (processing) {
+      List rvs = findProcDef(scriptCurrentLine)
+      if (rvs == null) break
+      endLine = rvs[0]
+      String processName = rvs[1]
+      hostProcessNames << rvs[2]
+      "$processName"(processName, scriptCurrentLine, endLine)
+      scriptCurrentLine = endLine + 1
+      if ( !findNextProc(collectEnd) ) processing = false
+    }
+    hostProcessChannelInsert << preNetwork + "\n"
+    hostProcessParInsert << network + "\n"
+    network = ""
+    preNetwork = ""
+
+  // add PAR to host process PAR statement
+    hostProcessParInsert << "\nnew PAR($hostProcessNames).run()\n"
+  }
 
   // channel processing closures
   def swapChannelNames = { ChanTypeEnum expected ->
@@ -387,9 +461,9 @@ class CGPPlexingMethods {
 
   def nextProcSpan = { start ->
     int beginning = start
-    while (!(inText[beginning] =~ /new/)) beginning++
+    while (!(scriptText[beginning] =~ /new/)) beginning++
     int ending = beginning
-    while (!inText[ending].endsWith(")")) ending++
+    while (!scriptText[ending].endsWith(")")) ending++
     return [beginning, ending]
   }
 
@@ -397,18 +471,18 @@ class CGPPlexingMethods {
     int line
     line = -1  // just to make sure it has a value
     for (i in (int) l[0]..(int) l[1]) {
-      if ((inText[i] =~ /workers/) || (inText[i] =~ /mappers/) || (inText[i] =~ /reducers/) || (inText[i] =~ /groups/)) {
+      if ((scriptText[i] =~ /workers/) || (scriptText[i] =~ /mappers/) || (scriptText[i] =~ /reducers/) || (scriptText[i] =~ /groups/)) {
         line = i
         break
       }
     }
     // we now know we have found the right line
-    int colon = inText[line].indexOf(":") + 1
-    int end = inText[line].indexOf(",")
-    if (end == -1) end = inText[line].indexOf(")")
-//		println "$line, ${inText[line]}, $colon, $end"
+    int colon = scriptText[line].indexOf(":") + 1
+    int end = scriptText[line].indexOf(",")
+    if (end == -1) end = scriptText[line].indexOf(")")
+//		println "$line, ${scriptText[line]}, $colon, $end"
     if (end != -1) {
-      chanSize = inText[line].subSequence(colon, end).trim()
+      chanSize = scriptText[line].subSequence(colon, end).trim()
       return chanSize
     } else return null
   }
@@ -416,45 +490,47 @@ class CGPPlexingMethods {
   // closure to find a process def assuming start is the index of a line containing such a def
   def findProcDef = { int start ->
     int ending = start
-    while (!inText[ending].endsWith(")")) ending++
-    int startIndex = inText[start].indexOf("new") + 4
-    int endIndex = inText[start].indexOf("(")
+    while (!scriptText[ending].endsWith(")")) ending++
+    int startIndex = scriptText[start].indexOf("new") + 4
+    int endIndex = scriptText[start].indexOf("(")
     if (startIndex == -1 || endIndex == -1) {
-      error += "string *new* found in an unexpected place\n${inText[scriptCurrentLine]}\n"
+      error += "string *new* found in an unexpected place\n${scriptText[scriptCurrentLine]}\n"
       network += error
       return null
     } else {
-      String processName = inText[start].subSequence(startIndex, endIndex).trim()
-      startIndex = inText[start].indexOf("def") + 4
-      endIndex = inText[start].indexOf("=")
-      String procName = inText[start].subSequence(startIndex, endIndex)
+      String processName = scriptText[start].subSequence(startIndex, endIndex).trim()
+      startIndex = scriptText[start].indexOf("def") + 4
+      endIndex = scriptText[start].indexOf("=")
+      String procName = scriptText[start].subSequence(startIndex, endIndex)
       return [ending, processName, procName]
     }
   }
-
-  def findNextProc = {
+  // closure to find the next process definition before scriptText[limit]
+  def findNextProc = { int limit ->
     scriptCurrentLine = endLine + 1
-    while (!(inText[scriptCurrentLine] =~ /new/)) {
-      network += inText[scriptCurrentLine] + "\n" // add blank and comment lines
+    boolean processing = scriptCurrentLine <= limit
+    while (!(scriptText[scriptCurrentLine] =~ /new/) && processing) {
+      network += scriptText[scriptCurrentLine] + "\n" // add blank and comment lines
       scriptCurrentLine++
+      processing = scriptCurrentLine <= limit
     }
-
+    return processing
   }
 
   def extractProcDefParts = { int line ->
-    int len = inText[line].size()
-    int openParen = inText[line].indexOf("(")
-    int closeParen = inText[line].indexOf(")")  // could be -1
-    String initialDef = inText[line].subSequence(0, openParen + 1) // includes the (
+    int len = scriptText[line].size()
+    int openParen = scriptText[line].indexOf("(")
+    int closeParen = scriptText[line].indexOf(")")  // could be -1
+    String initialDef = scriptText[line].subSequence(0, openParen + 1) // includes the (
     String remLine = null
     String firstProperty = null
     if (closeParen > 0) {
       // single line definition
-      remLine = inText[line].subSequence(openParen + 1, closeParen + 1).trim()
+      remLine = scriptText[line].subSequence(openParen + 1, closeParen + 1).trim()
     } else {
       //multi line definition
       if (openParen == (len - 1)) firstProperty = " " // no property specified
-      else firstProperty = inText[line].subSequence(openParen + 1, len).trim()
+      else firstProperty = scriptText[line].subSequence(openParen + 1, len).trim()
     }
     return [initialDef, remLine, firstProperty]    // known as rvs subsequently
   }
@@ -462,7 +538,7 @@ class CGPPlexingMethods {
   def copyProcProperties = { List rvs, int starting, int ending ->
     if (rvs[2] == null) network += "    ${rvs[1]}\n" else {
       if (rvs[2] != " ") network += "    ${rvs[2]}\n"
-      for (i in starting + 1..ending) network += "    " + inText[i] + "\n"
+      for (i in starting + 1..ending) network += "    " + scriptText[i] + "\n"
     }
   }
 
@@ -480,32 +556,32 @@ class CGPPlexingMethods {
 //    scriptCurrentLine = starting
 //    if (repeatWord != null) {
 //      // looking for repeatWord
-//      while (!(inText[scriptCurrentLine] =~ repeatWord)) {
+//      while (!(scriptText[scriptCurrentLine] =~ repeatWord)) {
 //        scriptCurrentLine++
 //      }
-//      int colon = inText[scriptCurrentLine].indexOf(":") + 1
-//      int endLine = inText[scriptCurrentLine].indexOf(",")
-//      if (endLine == -1) endLine = inText[scriptCurrentLine].indexOf(")")
-//      if (endLine != -1) repeats = inText[scriptCurrentLine].subSequence(colon, endLine).trim()
+//      int colon = scriptText[scriptCurrentLine].indexOf(":") + 1
+//      int endLine = scriptText[scriptCurrentLine].indexOf(",")
+//      if (endLine == -1) endLine = scriptText[scriptCurrentLine].indexOf(")")
+//      if (endLine != -1) repeats = scriptText[scriptCurrentLine].subSequence(colon, endLine).trim()
 //    }
 //    scriptCurrentLine = starting
 //    // look for a line containing logPhaseName(s)
-//    while (!(inText[scriptCurrentLine] =~ /logPhaseName/)) {
+//    while (!(scriptText[scriptCurrentLine] =~ /logPhaseName/)) {
 //      scriptCurrentLine++
 //    }
-//    if (inText[scriptCurrentLine] =~ /logPhaseNames/) {
+//    if (scriptText[scriptCurrentLine] =~ /logPhaseNames/) {
 //      // looking for a list of names,  logPhaseNames: [ "phase1", ... , "phase-n" ]
-//      int startBracket = inText[scriptCurrentLine].indexOf("[") + 1
-//      int endBracket = inText[scriptCurrentLine].indexOf("]")
-//      phaseName = inText[scriptCurrentLine].subSequence(startBracket, endBracket)  // remove [ ]
+//      int startBracket = scriptText[scriptCurrentLine].indexOf("[") + 1
+//      int endBracket = scriptText[scriptCurrentLine].indexOf("]")
+//      phaseName = scriptText[scriptCurrentLine].subSequence(startBracket, endBracket)  // remove [ ]
 //    } else {
 //      // looking for a single name, we have a logPhaseName: "phase"
-//      int colon = inText[scriptCurrentLine].indexOf(":") + 1
-//      int endLine = inText[scriptCurrentLine].indexOf(",")
-//      if (endLine == -1) endLine = inText[scriptCurrentLine].indexOf(")")
+//      int colon = scriptText[scriptCurrentLine].indexOf(":") + 1
+//      int endLine = scriptText[scriptCurrentLine].indexOf(",")
+//      if (endLine == -1) endLine = scriptText[scriptCurrentLine].indexOf(")")
 //      if (endLine != -1) {
 //        // will include quotes if a string constant
-//        phaseName = inText[scriptCurrentLine].subSequence(colon, endLine).trim()
+//        phaseName = scriptText[scriptCurrentLine].subSequence(colon, endLine).trim()
 //        // now remove the quote marks around word
 ////        phaseName = phaseName.subSequence(1, phaseName.length() - 1)
 //      }
@@ -645,7 +721,7 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    input: ${currentInChanName}.in(),\n"
-    if (logging) network += logChanAdd
+//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
 
@@ -722,7 +798,7 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    inputList: ${currentInChanName}InList,\n"
-    if (logging) network += logChanAdd
+//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
 
@@ -745,7 +821,7 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    inputAny: ${currentInChanName}.in(),\n"
-    if (logging) network += logChanAdd
+//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
 
@@ -768,27 +844,22 @@ class CGPPlexingMethods {
 // cluster connectors
   def NodeRequestingFanAny = { String processName, int starting, int ending ->
     println "$processName: $starting, $ending"
-    network += inText[starting]
   }
 
   def NodeRequestingFanList = { String processName, int starting, int ending ->
     println "$processName: $starting, $ending"
-    network += inText[starting]
   }
 
   def NodeRequestingParCastList = { String processName, int starting, int ending ->
     println "$processName: $starting, $ending"
-    network += inText[starting]
   }
 
   def NodeRequestingSeqCastList = { String processName, int starting, int ending ->
     println "$processName: $starting, $ending"
-    network += inText[starting]
   }
 
   def OneNodeRequestedList = { String processName, int starting, int ending ->
     println "$processName: $starting, $ending"
-    network += inText[starting]
   }
 
 // reducers
@@ -1130,7 +1201,7 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    input: ${currentInChanName}.in(),\n"
-    if (logging) network += logChanAdd
+//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
 

@@ -19,12 +19,14 @@ class CGPPlexFileHanding {
 	def openFiles ( String fileRoot  ) {
 		String dir = System.getProperty("user.dir") + "/src/main/groovy"
 //		println "Builder Dir = $dir"
+		// create readers for all the input files
 		String scriptFileName = fileRoot + ".cgpp"
 		scriptReader = new FileReader(new File(scriptFileName))
-		nodeLoaderReader = new FileReader(new File("$dir/baseFiles/BasicNodeLoader.groovy"))
-		hostLoaderReader = new FileReader(new File("$dir/baseFiles/BasicHostLoader.groovy"))
-		nodeProcessReader = new FileReader(new File("$dir/baseFiles/BasicNodeProcess.groovy"))
-		hostProcessReader = new FileReader(new File("$dir/baseFiles/BasicHostProcess.groovy"))
+		nodeLoaderReader = new FileReader(new File("$dir/gppClusterBuilder/BasicNodeLoader.txt"))
+		hostLoaderReader = new FileReader(new File("$dir/gppClusterBuilder/BasicHostLoader.txt"))
+		nodeProcessReader = new FileReader(new File("$dir/gppClusterBuilder/BasicNodeProcess.txt"))
+		hostProcessReader = new FileReader(new File("$dir/gppClusterBuilder/BasicHostProcess.txt"))
+		// create writers for all the output files and delete any pre-existing files
 		String nodeLoaderName = fileRoot + "NodeLoader.groovy"
 		String nodeProcessName = fileRoot + "NodeProcess.groovy"
 		String hostLoaderName = fileRoot + "HostLoader.groovy"
@@ -72,8 +74,9 @@ class CGPPlexFileHanding {
 		gppLex.with{
 			extractAppStructure()
 			processLoaders()
-//			createNodeProcessInserts()
-//			createHostProcessInserts()
+			createHostProcessEmitInserts()
+			createHostProcessCollectInserts()
+			createClusterProcessInserts()
 			completeProcesses()
 		}
 		writeOutFiles()

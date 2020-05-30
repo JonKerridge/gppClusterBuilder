@@ -13,7 +13,7 @@ class BasicHostLoader implements LoaderConstants{
     def nodeAddress = new TCPIPNodeAddress(2000)
     Node.getInstance().init(nodeAddress)
     String hostIP = nodeAddress.getIpAddress()
-    println "Host $hostIP running"
+    println "Host $hostIP running with $nodes nodes"
     NetChannelInput fromNodes = NetChannel.numberedNet2One(1 )
     // wait for all the nodes to send their IP addresses
     // create a List for the IPs
@@ -54,6 +54,7 @@ class BasicHostLoader implements LoaderConstants{
     for ( n in 0 ..< nodes){
       toNodes[n].write(startNodeProcess)
     }
+    println "Host running application process"
     long processStart = System.currentTimeMillis()
     // builder modifies the name of the host process
     //@hostProcess
