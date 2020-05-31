@@ -297,7 +297,7 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
-    // TODO copy host inputVCNs creation code
+    // copy host inputVCNs creation code
     hostNodeInputInsert.each{line ->
       hostProcessOutText << line + "\n"
     }
@@ -309,7 +309,7 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
-    // TODO copy host hostInputs creation code
+    // copy host hostInputs creation code
     hostInputInsert.each{line ->
       hostProcessOutText << line + "\n"
     }
@@ -321,7 +321,7 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
-    // TODO copy host outputVCNs creation code
+    // copy host outputVCNs creation code
     hostNodeOutputInsert.each{line ->
       hostProcessOutText << line + "\n"
     }
@@ -333,7 +333,7 @@ class CGPPlexingMethods {
       hostProcessLine++
     }
     hostProcessOutText << hostProcessText[hostProcessLine] + "\n"
-    // TODO copy host hostOutputs creation code
+    // copy host hostOutputs creation code
     hostOutputInsert.each{line ->
       hostProcessOutText << line + "\n"
     }
@@ -389,7 +389,7 @@ class CGPPlexingMethods {
     network = ""
     preNetwork = ""
   }
-  //TODO extract cluster inserts
+  // extract cluster inserts
   def createClusterProcessInserts = {
     scriptCurrentLine = clusterStart
     while (!(scriptText[scriptCurrentLine] =~ /Requesting/)){
@@ -414,7 +414,7 @@ class CGPPlexingMethods {
     network = ""
     preNetwork = ""
   }
-  //TODO extract collect process inserts
+  // extract collect process inserts
   def createHostProcessCollectInserts = {
     scriptCurrentLine = collectStart
     while (!(scriptText[scriptCurrentLine] =~ /One/)){  // excludes N-WayMerge as first reducer in Collect

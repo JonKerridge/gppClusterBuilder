@@ -18,7 +18,10 @@ List <String>  hostInputInsert = ["//host Input Insert\n"]
 List <String>  hostNodeOutputInsert = ["//host NodeOutput Insert\n"]
 List <String>  hostOutputInsert = ["//host Output Insert\n"]
 
-def createAllInserts = {
+String emitRequestName, emitResponseName, nodeRequestName, nodeResponseName
+String nodeOutputName, collectInputName
+
+def createAllNetChannelInserts = {
   String hostNodeInputInsertString
   hostNodeInputInsertString = "inputVCNs = [ "
   for (n in 0..<nodes_Number - 1) hostNodeInputInsertString += "[$nodeInRange], "
@@ -27,11 +30,13 @@ def createAllInserts = {
   hostNodeInputInsert << hostNodeInputInsertString
 
   String hostInputInsertString
-  hostInputInsertString = "ChannelInputList netInList1 = [] \n"
-  emitInRange.each { e -> hostInputInsertString += "netInList1.append(NetChannel.numberedNet2One($e)) \n"
+  hostInputInsertString = "ChannelInputList emitRequestList = [] \n"
+  emitInRange.each { e -> hostInputInsertString += "emitRequestList.append(NetChannel.numberedNet2One($e)) \n"
   }
-  hostInputInsertString += "ChannelInput netIn1 = NetChannel.numberedNet2One($collectInRange) \n"
+  hostInputInsertString += "ChannelInput collectFromNodes = NetChannel.numberedNet2One($collectInRange) \n"
   hostInputInsert << hostInputInsertString
+  emitRequestName = "emitRequestList"
+  collectInputName = "collectFromNodes"
 
   String hostNodeOutputInsertString
   List<String> nodeString = []
@@ -45,22 +50,26 @@ def createAllInserts = {
   hostNodeOutputInsert << hostNodeOutputInsertString
 
   String hostOutputInsertString
-  hostOutputInsertString = "ChannelOutputList netOutList1 = [] \n"
+  hostOutputInsertString = "ChannelOutputList emitResponseList = [] \n"
   for (i in 0..<nodes_Number) {
-    hostOutputInsertString += "netOutList1.append(NetChannel.one2net(new TCPIPNodeAddress(nodeIPs[$i], 1000), 200)) \n"
+    hostOutputInsertString += "emitResponseList.append(NetChannel.one2net(new TCPIPNodeAddress(nodeIPs[$i], 1000), 200)) \n"
   }
   hostOutputInsert << hostOutputInsertString
+  emitResponseName = "emitResponseList"
 
-  String nodeInputInsertString = "ChannelInput netIn1 = NetChannel.numberedNet2One(inputVCNs[0])\n"
+  String nodeInputInsertString = "ChannelInput nodeFromEmit = NetChannel.numberedNet2One(inputVCNs[0])\n"
   nodeInputInsert << nodeInputInsertString
+  nodeResponseName = "nodeFromEmit"
 
   String nodeOutputInsertString
-  nodeOutputInsertString = "ChannelOutput netOut1 = NetChannel.one2net" + "(new TCPIPNOdeAddress(outputVCNs[0][0], 2000), outputVCNs[0][1])\n"
-  nodeOutputInsertString += "ChannelOutput netOut2 = NetChannel.one2net" + "(new TCPIPNOdeAddress(outputVCNs[1][0], 2000), outputVCNs[1][1])\n"
+  nodeOutputInsertString = "ChannelOutput node2emit = NetChannel.one2net" + "(new TCPIPNOdeAddress(outputVCNs[0][0], 2000), outputVCNs[0][1])\n"
+  nodeOutputInsertString += "ChannelOutput node2collect = NetChannel.one2net" + "(new TCPIPNOdeAddress(outputVCNs[1][0], 2000), outputVCNs[1][1])\n"
   nodeOutputInsert << nodeOutputInsertString
+  nodeRequestName = "node2emit"
+  nodeOutputName = "node2collect"
 }
 
-createAllInserts()
+createAllNetChannelInserts()
 
 hostNodeInputInsert.each { println "$it" }
 hostInputInsert.each { println "$it" }
