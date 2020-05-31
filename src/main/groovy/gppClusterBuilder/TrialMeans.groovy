@@ -1,15 +1,10 @@
 package gppClusterBuilder
 
+// simulates variable used in lexer
 int clusters
 clusters = 4
 int nodes_Number
 nodes_Number = clusters
-
-Range emitInRange = 100 ..< 100+nodes_Number
-int nodeInRange = 200
-int collectInRange = 300
-
-//println "$emitInRange, $nodeInRange, $collectInRange"
 
 List <String>  nodeInputInsert = ["//node Input Insert\n"]
 List <String>  nodeOutputInsert = ["//node Output Insert\n"]
@@ -18,14 +13,25 @@ List <String>  hostInputInsert = ["//host Input Insert\n"]
 List <String>  hostNodeOutputInsert = ["//host NodeOutput Insert\n"]
 List <String>  hostOutputInsert = ["//host Output Insert\n"]
 
+// end of required external names
+
+// names of net channels
 String emitRequestName, emitResponseName, nodeRequestName, nodeResponseName
 String nodeOutputName, collectInputName
 
+// range of VCNs used by the net channels
+Range emitInRange = 100 ..< 100+nodes_Number
+int nodeInVCN = 200
+int collectInVCN = 300
+Range collectInRange = 300 ..< 300+nodes_Number   // will be used when collect input is a List
+
+// create all the net channel inserts
+// uses VCN ranges and names of net channels
 def createAllNetChannelInserts = {
   String hostNodeInputInsertString
   hostNodeInputInsertString = "inputVCNs = [ "
-  for (n in 0..<nodes_Number - 1) hostNodeInputInsertString += "[$nodeInRange], "
-  hostNodeInputInsertString += "[$nodeInRange] "
+  for (n in 0..<nodes_Number - 1) hostNodeInputInsertString += "[$nodeInVCN], "
+  hostNodeInputInsertString += "[$nodeInVCN] "
   hostNodeInputInsertString += "]\n"
   hostNodeInputInsert << hostNodeInputInsertString
 
@@ -33,7 +39,7 @@ def createAllNetChannelInserts = {
   hostInputInsertString = "ChannelInputList emitRequestList = [] \n"
   emitInRange.each { e -> hostInputInsertString += "emitRequestList.append(NetChannel.numberedNet2One($e)) \n"
   }
-  hostInputInsertString += "ChannelInput collectFromNodes = NetChannel.numberedNet2One($collectInRange) \n"
+  hostInputInsertString += "ChannelInput collectFromNodes = NetChannel.numberedNet2One($collectInVCN) \n"
   hostInputInsert << hostInputInsertString
   emitRequestName = "emitRequestList"
   collectInputName = "collectFromNodes"
@@ -42,7 +48,7 @@ def createAllNetChannelInserts = {
   List<String> nodeString = []
   hostNodeOutputInsertString = "outputVCNs = [ "
   emitInRange.each { e ->
-    String s = "[ [hostIP, $e], [hostIP, $collectInRange] ]"
+    String s = "[ [hostIP, $e], [hostIP, $collectInVCN] ]"
     nodeString << s
   }
   for (n in 0..<nodes_Number - 1) hostNodeOutputInsertString += nodeString[n] + ", "
