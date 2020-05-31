@@ -16,11 +16,13 @@ int clusterEnd = 42
 int collectStart = 44
 int collectEnd = 58
 
+// line numbers of key processes
 int emitLastProc
 int clusterFirstProc
 int clusterLastProc
 int collectFirstProc
 
+// extract key process line numbers
 def extractFirstLastProcs = {
   int scriptCurrentLine = emitStart
   while (!(scriptText[scriptCurrentLine] =~ /Emit/)) scriptCurrentLine++
