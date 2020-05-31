@@ -70,16 +70,18 @@ class CGPPlexFileHanding {
 	}
 
 	String parse () {
-		readInFiles()
+		readInFiles.call()
 		gppLex.with{
-			extractAppStructure()
-			processLoaders()
-			createHostProcessEmitInserts()
-			createHostProcessCollectInserts()
-			createClusterProcessInserts()
-			completeProcesses()
+			extractAppStructure.call()
+			processLoaders.call()
+			extractFirstLastProcs.call()
+			createAllNetChannelInserts.call()
+			createHostProcessEmitInserts.call()
+			createHostProcessCollectInserts.call()
+			createClusterProcessInserts.call()
+			completeProcesses.call()
 		}
-		writeOutFiles()
+		writeOutFiles.call()
 		return gppLex.error
 	}
 

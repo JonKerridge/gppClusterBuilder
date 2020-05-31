@@ -22,7 +22,7 @@ class MCpiResultsSerialised extends groovyParallelPatterns.DataClass {
     double pi = 4.0 * ((double) withinSum / (double) iterationSum)
 //    println """Total Iterations: $iterationSum Points Within : $withinSum pi Value :$pi"""
 //    println "Math value of pi is ${Math.PI}"
-    print "$pi, "
+    println "pi = $pi "
     return completedOK
   }
   /**

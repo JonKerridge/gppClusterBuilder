@@ -10,7 +10,7 @@ import groovyParallelPatterns.terminals.Collect
 import groovyParallelPatterns.terminals.Emit
 
 int cores = 2
-int clusters = 2
+int clusters = 1
 
 //@emit
 
@@ -28,7 +28,7 @@ def emit = new Emit (
 
 def onrl = new OneNodeRequestedList()
 
-//@cluster 2
+//@cluster 1
 
 def nrfa = new NodeRequestingFanAny(
     destinations: cores

@@ -16,7 +16,7 @@ int clusterEnd = 42
 int collectStart = 44
 int collectEnd = 58
 
-// line numbers of key processes
+// line numbers in scriptText of key processes
 int emitLastProc
 int clusterFirstProc
 int clusterLastProc

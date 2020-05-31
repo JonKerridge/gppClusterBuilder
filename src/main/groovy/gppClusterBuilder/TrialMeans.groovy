@@ -12,7 +12,6 @@ List <String>  hostNodeInputInsert = ["//host NodeInput Insert\n"]
 List <String>  hostInputInsert = ["//host Input Insert\n"]
 List <String>  hostNodeOutputInsert = ["//host NodeOutput Insert\n"]
 List <String>  hostOutputInsert = ["//host Output Insert\n"]
-
 // end of required external names
 
 // names of net channels
