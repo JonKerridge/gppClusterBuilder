@@ -10,6 +10,7 @@ package mcpiDemo
 class MCpiResultsSerialised extends groovyParallelPatterns.DataClass {
   int iterationSum = 0
   int withinSum = 0
+  int recordsRead = 0
   static String init = "initClass"
   static String collector = "collector"
   static String finalise = "finalise"
@@ -22,7 +23,7 @@ class MCpiResultsSerialised extends groovyParallelPatterns.DataClass {
     double pi = 4.0 * ((double) withinSum / (double) iterationSum)
 //    println """Total Iterations: $iterationSum Points Within : $withinSum pi Value :$pi"""
 //    println "Math value of pi is ${Math.PI}"
-    println "pi = $pi "
+    println "pi = $pi from $recordsRead records"
     return completedOK
   }
   /**
@@ -37,6 +38,7 @@ class MCpiResultsSerialised extends groovyParallelPatterns.DataClass {
   int collector(Object o){
     iterationSum = iterationSum + ((SerializedMCpiData) o).iterations
     withinSum = withinSum + ((SerializedMCpiData) o).within
+    recordsRead++
     return completedOK
   }
 

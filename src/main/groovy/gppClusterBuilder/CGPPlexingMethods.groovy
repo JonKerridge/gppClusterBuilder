@@ -1,7 +1,5 @@
 package gppClusterBuilder
 
-import GPP_Builder.ChanTypeEnum
-
 class CGPPlexingMethods {
 
   String error = ""
@@ -39,9 +37,12 @@ class CGPPlexingMethods {
 
   int emitStart, emitEnd, collectStart, collectEnd, clusterStart, clusterEnd, clusterSize
 
-// names of net channels
+  // names of net channels
   String emitRequestName, emitResponseName, nodeRequestName, nodeResponseName
   String nodeOutputName, collectInputName
+
+  // records if first process in collect part is List or Any
+  boolean collectByList = false
 
   // resultants scripts
   List <String> nodeLoaderOutText = []
@@ -175,9 +176,7 @@ class CGPPlexingMethods {
     // now search for //@clusters line in script
     int cLine = scriptCurrentLine
     while ( cLine < scriptText.size()){
-      if (scriptText[cLine].startsWith("//@cluster")){
-        clusterSize = Integer.parseInt(scriptText[cLine].substring(11))
-      }
+      if (scriptText[cLine].startsWith("//@cluster")) findClusterSize(cLine)
       cLine++
     }
     // now find the start and end line of each section in script
@@ -195,11 +194,57 @@ class CGPPlexingMethods {
     clusterEnd = cLine - 1
     collectStart = cLine+1
     collectEnd = scriptText.size() - 1
-    println "Emit: $emitStart, $emitEnd"
-    println "Cluster: $clusterStart, $clusterEnd Size is $clusterSize"
-    println "Collect: $collectStart, $collectEnd"
-    // have now collected the separate parts of the script including multiple clusters
+//    println "Emit: $emitStart, $emitEnd"
+//    println "Cluster: $clusterStart, $clusterEnd Size is $clusterSize"
+//    println "Collect: $collectStart, $collectEnd"
+    // have now collected the separate parts of the script
   } //end of extractAppStructure
+
+  def findClusterSize = { int lineNumber ->
+    // cluster size could either be an integer of the name of a
+    // previously defined integer variable
+    String clusterText = scriptText[lineNumber].substring(11).trim()
+    if (clusterText =~ /[0-9]{1,4}/) {
+      // integer in range 1 .. 9999
+      clusterSize = Integer.parseInt(clusterText)
+    }
+    else {
+      // clusterText must be a variable name so go backwards until
+      // a line is found that contains int and clusterText
+      // line may be in a comment
+      boolean notFound = true
+      lineNumber--
+      while (notFound) {
+        while (!(scriptText[lineNumber] =~ clusterText)  && (lineNumber > 1)) lineNumber--
+        if (lineNumber == 0) {
+          error += "cannot find definition of $clusterText to give number of clusters"
+          clusterSize = -1 // to ensure code will fail!
+          notFound = false
+        }
+        else{
+          // clusterText has been found  do some checks
+          if (!(scriptText[lineNumber].trim().startsWith("//"))){
+            // this is not a comment at start of line
+            int equalIndex = scriptText[lineNumber].indexOf("=")
+            int l = equalIndex + 1
+            while (scriptText[lineNumber][l] == " ") l++
+            String clusterString = scriptText[lineNumber][l]
+            l++
+            while (scriptText[lineNumber][l] =~ "[0-9]") {
+              clusterString = scriptText[lineNumber][l]
+              l++
+            }
+            clusterSize = Integer.parseInt(clusterString)
+            notFound = false
+          }
+          else {
+            lineNumber--
+          }
+
+        }
+      }
+    }
+  } // end of findClusterSize
 
   def processLoaders = {
     // find start of class, replace Basic with appName and copy to nodeLoaderOutText
@@ -394,17 +439,33 @@ class CGPPlexingMethods {
 //    println "Emit in range is $emitRange"
     emitRange.each { e -> hostInputInsertString += "emitRequestList.append(NetChannel.numberedNet2One($e)) \n"
     }
-    hostInputInsertString += "ChannelInput collectFromNodes = NetChannel.numberedNet2One($collectInVCN) \n"
+    if ( collectByList){
+      hostInputInsertString += "ChannelInputList collectListFromNodes = [] \n"
+      collectInRange.each(c -> hostInputInsertString += "collectListFromNodes.append(NetChannel.numberedNet2One($c)) \n")
+      collectInputName = "collectListFromNodes"
+    }
+    else {
+      hostInputInsertString += "ChannelInput collectFromNodes = NetChannel.numberedNet2One($collectInVCN) \n"
+      collectInputName = "collectFromNodes"
+    }
     hostInputInsert << hostInputInsertString
     emitRequestName = "emitRequestList"
-    collectInputName = "collectFromNodes"
 
     String hostNodeOutputInsertString
     List<String> nodeString = []
     hostNodeOutputInsertString = "outputVCNs = [ "
-    emitRange.each { e ->
-      String s = "[ [hostIP, $e], [hostIP, $collectInVCN] ]"
-      nodeString << s
+    if ( collectByList){ // collect uses ListFanOne or ListMergeOne
+      for ( c in 0 ..< clusterSize) {
+        String s = "[ [hostIP, ${emitRange[c]}], [hostIP, ${collectInRange[c]}] ]"
+        nodeString << s
+      }
+    }
+    else {
+      // collect uses AnyFanOne
+      emitRange.each { e ->
+        String s = "[ [hostIP, $e], [hostIP, $collectInVCN] ]"
+        nodeString << s
+      }
     }
     for (n in 0..<clusterSize - 1) hostNodeOutputInsertString += nodeString[n] + ", "
     hostNodeOutputInsertString += nodeString[clusterSize - 1] + " ]\n"
@@ -461,7 +522,7 @@ class CGPPlexingMethods {
       preNetwork += scriptText[scriptCurrentLine] +"\n"
       scriptCurrentLine++
     }
-    // should now have emit process definition
+    // should now have cluster process definition
     boolean processing = true
     while (processing) {
       List rvs = findProcDef(scriptCurrentLine)
@@ -481,7 +542,8 @@ class CGPPlexingMethods {
     nodeProcessInsert << "\nnew PAR($nodeProcessNames).run()\n"
     network = ""
     preNetwork = ""
-  }
+  } // end of createClusterProcessInserts
+
   // extract collect process inserts
   def createHostProcessCollectInserts = {
     scriptCurrentLine = collectStart
@@ -489,7 +551,7 @@ class CGPPlexingMethods {
       preNetwork += scriptText[scriptCurrentLine] +"\n"
       scriptCurrentLine++
     }
-    // should now have reducer process definition
+    // should now have collect process definition
     boolean processing = true
     while (processing) {
       List rvs = findProcDef(scriptCurrentLine)
@@ -511,7 +573,9 @@ class CGPPlexingMethods {
 
   // add PAR to host process PAR statement
     hostProcessParInsert << "\nnew PAR($hostProcessNames).run()\n"
-  }
+
+  } //end of createHostProcessCollectInserts
+
   // extract key process line numbers
   def extractFirstLastProcs = {
     int scriptCurrentLine = emitStart
@@ -531,7 +595,8 @@ class CGPPlexingMethods {
     while (!(scriptText[scriptCurrentLine] =~ /Any/)  &&
         !(scriptText[scriptCurrentLine] =~ /List/)) scriptCurrentLine++
     collectFirstProc = scriptCurrentLine
-  }
+    if (scriptText[scriptCurrentLine] =~ /List/ ) collectByList = true
+  } // end of extractFirstLastProcs
 
   // channel processing closures
   def swapChannelNames = { ChanTypeEnum expected ->
@@ -539,14 +604,14 @@ class CGPPlexingMethods {
     chanNumber += 1
     currentOutChanName = "chan$chanNumber"
     expectedInChan = expected
-  }
+  } //end of swapChannelNames
 
   def confirmChannel = { String pName, ChanTypeEnum actualInChanType ->
     if (expectedInChan != actualInChanType) {
       network += "Expected a process with a *$expectedInChan* type input  found $pName with type $actualInChanType \n"
       error += " with errors, see the parsed output file"
     }
-  }
+  } // end of confirmChannel
 
   def nextProcSpan = { start ->
     int beginning = start
@@ -554,7 +619,7 @@ class CGPPlexingMethods {
     int ending = beginning
     while (!scriptText[ending].endsWith(")")) ending++
     return [beginning, ending]
-  }
+  } //end of nextProcSpan
 
   def scanChanSize = { List l ->
     int line
@@ -574,7 +639,7 @@ class CGPPlexingMethods {
       chanSize = scriptText[line].subSequence(colon, end).trim()
       return chanSize
     } else return null
-  }
+  } // end of scanChanSize
 
   // closure to find a process def assuming start is the index of a line containing such a def
   def findProcDef = { int start ->
@@ -593,7 +658,8 @@ class CGPPlexingMethods {
       String procName = scriptText[start].subSequence(startIndex, endIndex)
       return [ending, processName, procName]
     }
-  }
+  } // end of findProcDef
+
   // closure to find the next process definition before scriptText[limit]
   def findNextProc = { int limit ->
     scriptCurrentLine = endLine + 1
@@ -604,7 +670,7 @@ class CGPPlexingMethods {
       processing = scriptCurrentLine <= limit
     }
     return processing
-  }
+  }  // end of findNextProc
 
   def extractProcDefParts = { int line ->
     int len = scriptText[line].size()
@@ -622,21 +688,21 @@ class CGPPlexingMethods {
       else firstProperty = scriptText[line].subSequence(openParen + 1, len).trim()
     }
     return [initialDef, remLine, firstProperty]    // known as rvs subsequently
-  }
+  } // end of extractProcDefParts
 
   def copyProcProperties = { List rvs, int starting, int ending ->
     if (rvs[2] == null) network += "    ${rvs[1]}\n" else {
       if (rvs[2] != " ") network += "    ${rvs[2]}\n"
       for (i in starting + 1..ending) network += "    " + scriptText[i] + "\n"
     }
-  }
+  } // end of copyProcProperties
 
   def checkNoProperties = { List rvs ->
     if (rvs[1] != ")") {
       error += "expecting a closing ) on same line  but not found\n"
       network += error
     }
-  }
+  } // end of checkNoProperties
 
   /**
    * Define a set of closures that process common combinations
@@ -663,19 +729,6 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2one()\n"
     swapChannelNames(ChanTypeEnum.one)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, null)
-////      println "oneOne: $returned"
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName :  LogPhaseName not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addWorker(" + returned[1] + ")) \n"
-//      }
-//    }
   } // end of OneOne
 
   def oneList = { String processName, int starting, int ending ->
@@ -693,12 +746,6 @@ class CGPPlexingMethods {
     preNetwork = preNetwork + "def ${currentOutChanName}OutList = new ChannelOutputList($currentOutChanName)\n"
     preNetwork = preNetwork + "def ${currentOutChanName}InList = new ChannelInputList($currentOutChanName)\n"
     swapChannelNames(ChanTypeEnum.list)
-
-//    //SH added
-//    if (logging) {
-//      network += "\n    //gppVis command\n"
-//      network += "    Visualiser.hb.getChildren().add(new Connector(Connector.TYPE.SPREADER)) \n"
-//    }
   } // end of oneList
 
   def oneListPlus = { String processName, int starting, int ending ->
@@ -731,11 +778,6 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2one()\n"
     swapChannelNames(ChanTypeEnum.one)
-//    //SH added modified by JMK
-//    if (logging) {
-//      network += "\n    //gppVis command\n"
-//      network += "    Visualiser.hb.getChildren().add(new Connector(Connector.TYPE.REDUCER)) \n"
-//    }
   } //end of ListOne
 
   def noneOne = { String processName, int starting, int ending ->
@@ -747,19 +789,7 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2one()\n"
     swapChannelNames(ChanTypeEnum.one)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, null)
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : LogPhaseName not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addWorker(" + returned[1] + ")) \n"
-//      }
-//    }
-  }
+  }  //end of noneOne
 
   def oneNone = { String processName, int starting, int ending ->
 //		println "$processName: $starting, $ending"
@@ -767,23 +797,9 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    input: ${currentInChanName}.in(),\n"
-//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, null)
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : LogPhaseName not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addWorker(" + returned[1] + ")) \n"
-//      }
-//    }
-
-  }
+  }// end of oneNone
 
   def listListGroup = { String processName, int starting, int ending, String type, String size ->
     // type is used only for logging to ensure correct shape is produced
@@ -798,19 +814,7 @@ class CGPPlexingMethods {
     preNetwork = preNetwork + "def ${currentOutChanName}OutList = new ChannelOutputList($currentOutChanName)\n"
     preNetwork = preNetwork + "def ${currentOutChanName}InList = new ChannelInputList($currentOutChanName)\n"
     swapChannelNames(ChanTypeEnum.list)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, size)
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : groups and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.add$type(" + returned[0] + ", " + returned[1] + ")) \n"
-//      }
-//    }
-  }
+  } // end of listListgroup
 
   def anyAnyGroup = { String processName, int starting, int ending, String type, String size ->
 //		println "$processName: $starting, $ending, $type $size"
@@ -822,21 +826,7 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.any2any()\n"
     swapChannelNames(ChanTypeEnum.any)
-//    println "network so far:\n $network"
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, size)
-////      println "aAG: $returned"
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : groups and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.add$type(" + returned[0] + ", " + returned[1] + ")) \n"
-//      }
-//    }
-  }
+  } // end of anyAnyGroup
 
   def listNoneGroup = { String processName, int starting, int ending, String type, String size ->
 //		println "$processName: $starting, $ending, $type, $size"
@@ -844,22 +834,9 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    inputList: ${currentInChanName}InList,\n"
-//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
-
-    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, size)
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : groups and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.add$type(" + returned[0] + ", " + returned[1] + ")) \n"
-//      }
-//    }
-  }
+  } // end of listNoneGroup
 
   def anyNoneGroup = { String processName, int starting, int ending, String type , String size->
 //		println "$processName: $starting, $ending, $type, $size"
@@ -867,31 +844,18 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    inputAny: ${currentInChanName}.in(),\n"
-//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, size)
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : groups and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.add$type(" + returned[0] + ", " + returned[1] + ")) \n"
-//      }
-//    }
-  }
+  } // end of anyNoneGroup
 
 //
 // define the closures for each process type in the library
 //
-// cluster connectors
+// cluster connectors and processes
   def NodeRequestingFanAny = { String processName, int starting, int ending ->
-    println "$processName: $starting, $ending"
-    println "request ouput is $nodeRequestName"
-    println "response input is $nodeResponseName"
+//    println "$processName: $starting, $ending"
+//    println "request ouput is $nodeRequestName"
+//    println "response input is $nodeResponseName"
 //    confirmChannel(processName, ChanTypeEnum.one)
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
@@ -902,22 +866,42 @@ class CGPPlexingMethods {
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2any()\n"
     swapChannelNames(ChanTypeEnum.any)  }
 
+  def requestingList = { String processName, int starting, int ending ->
+//    confirmChannel(processName, ChanTypeEnum.one)
+    def rvs = extractProcDefParts(starting)
+    network += rvs[0] + "\n"
+    network += "    request: ${nodeRequestName},\n"
+    network += "    response: ${nodeResponseName},\n"
+    network += "    outList: ${currentOutChanName}OutList )\n"
+    checkNoProperties(rvs)
+    rvs = nextProcSpan(ending + 2)
+    String returnedChanSize = scanChanSize(rvs)
+    if (returnedChanSize != null) chanSize = returnedChanSize
+    preNetwork = preNetwork + "def $currentOutChanName = Channel.one2oneArray($chanSize)\n"
+    preNetwork = preNetwork + "def ${currentOutChanName}OutList = new ChannelOutputList($currentOutChanName)\n"
+    preNetwork = preNetwork + "def ${currentOutChanName}InList = new ChannelInputList($currentOutChanName)\n"
+    swapChannelNames(ChanTypeEnum.list)
+  }
+
   def NodeRequestingFanList = { String processName, int starting, int ending ->
-    println "$processName: $starting, $ending"
+//    println "$processName: $starting, $ending"
+    requestingList(processName, starting, ending)
   }
 
   def NodeRequestingParCastList = { String processName, int starting, int ending ->
-    println "$processName: $starting, $ending"
+//    println "$processName: $starting, $ending"
+    requestingList(processName, starting, ending)
   }
 
   def NodeRequestingSeqCastList = { String processName, int starting, int ending ->
-    println "$processName: $starting, $ending"
+//    println "$processName: $starting, $ending"
+    requestingList(processName, starting, ending)
   }
 
   def OneNodeRequestedList = { String processName, int starting, int ending ->
-    println "$processName: $starting, $ending"
-    println "request list name is $emitRequestName"
-    println "response list name is $emitResponseName"
+//    println "$processName: $starting, $ending"
+//    println "request list name is $emitRequestName"
+//    println "response list name is $emitResponseName"
     confirmChannel(processName, ChanTypeEnum.one)
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
@@ -926,10 +910,10 @@ class CGPPlexingMethods {
     network += "    response: ${emitResponseName},\n"
     copyProcProperties(rvs, starting, ending)
   }
-
+  // net specialisations of preexisting spreaders and reducers
   def inNetAnyFanOne = { String processName, int starting, int ending ->
-    println "inNet$processName: $starting, $ending"
-    println "net input name is $collectInputName"
+//    println "inNet$processName: $starting, $ending"
+//    println "net input name is $collectInputName"
 //    confirmChannel(processName, ChanTypeEnum.any)  // cannot do this confirmation
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
@@ -940,9 +924,29 @@ class CGPPlexingMethods {
     swapChannelNames(ChanTypeEnum.one)
   }
 
+  def inNetListOne = {String processName, int starting, int ending ->
+    def rvs = extractProcDefParts(starting)
+    network += rvs[0] + "\n"
+    network += "    inputList: ${collectInputName},\n"
+    network += "    output: ${currentOutChanName}.out(),\n"
+    copyProcProperties(rvs, starting, ending)
+    preNetwork = preNetwork + "def $currentOutChanName = Channel.one2one()\n"
+    swapChannelNames(ChanTypeEnum.one)
+  }
+
+  def inNetListFanOne = {String processName, int starting, int ending ->
+//    println "inNet$processName: $starting, $ending"
+    inNetListOne(processName, starting, ending)
+  }
+
+  def inNetListMergeOne = {String processName, int starting, int ending ->
+//    println "inNet$processName: $starting, $ending"
+    inNetListOne(processName, starting, ending)
+  }
+
   def outNetAnyFanOne = { String processName, int starting, int ending ->
-    println "outNet$processName: $starting, $ending"
-    println "net output name is $nodeOutputName"
+//    println "outNet$processName: $starting, $ending"
+//    println "net output name is $nodeOutputName"
     confirmChannel(processName, ChanTypeEnum.any)
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
@@ -953,6 +957,36 @@ class CGPPlexingMethods {
     swapChannelNames(ChanTypeEnum.one)
   }
 
+  def outNetListOne = { String processName, int starting, int ending ->
+    confirmChannel(processName, ChanTypeEnum.list)
+    def rvs = extractProcDefParts(starting)
+    network += rvs[0] + "\n"
+    network += "    inputList: ${currentInChanName}InList,\n"
+    network += "    output: ${nodeOutputName},\n"
+    copyProcProperties(rvs, starting, ending)
+    swapChannelNames(ChanTypeEnum.one)
+  }
+
+  def outNetListFanOne = {  String processName, int starting, int ending ->
+//    println "$processName: $starting, $ending"
+    outNetListOne(processName, starting, ending)
+  }
+
+  def outNetListMergeOne = {  String processName, int starting, int ending ->
+//    println "$processName: $starting, $ending"
+    outNetListOne(processName, starting, ending)
+  }
+
+  def outNetListParOne = {  String processName, int starting, int ending ->
+//    println "$processName: $starting, $ending"
+    outNetListOne(processName, starting, ending)
+  }
+
+  def outNetListSeqOne = {  String processName, int starting, int ending ->
+//    println "$processName: $starting, $ending"
+    outNetListOne(processName, starting, ending)
+  }
+//  connectors not networked
 // reducers
   def AnyFanOne = { String processName, int starting, int ending ->
 //		println "$processName: $starting, $ending"
@@ -1061,31 +1095,6 @@ class CGPPlexingMethods {
     oneList(processName, starting, ending)
   }
 
-// patterns
-//  def DataParallelCollect = { String processName, int starting, int ending ->
-////			println "$processName: $starting, $ending"
-//    pattern = true
-//    def rvs = extractProcDefParts(starting)
-//    network += rvs[0] + "\n"
-//    copyProcProperties(rvs, starting, ending)
-//  } // end of DataParallelCollect
-//
-//  def TaskParallelCollect = { String processName, int starting, int ending ->
-////			println "$processName: $starting, $ending"
-//    pattern = true
-//    def rvs = extractProcDefParts(starting)
-//    network += rvs[0] + "\n"
-//    copyProcProperties(rvs, starting, ending)
-//  } // end of TaskParallelCollect
-//
-//  def TaskParallelOfGroupCollects = { String processName, int starting, int ending ->
-////			println "$processName: $starting, $ending"
-//    pattern = true
-//    def rvs = extractProcDefParts(starting)
-//    network += rvs[0] + "\n"
-//    copyProcProperties(rvs, starting, ending)
-//  } // end of TaskParallelOfGroupCollects
-
   def TaskParallelPattern = { String processName, int starting, int ending ->
     patternProcess ( processName, starting, ending )
   }
@@ -1188,19 +1197,6 @@ class CGPPlexingMethods {
     preNetwork = preNetwork + "def ${currentOutChanName}OutList = new ChannelOutputList($currentOutChanName)\n"
     preNetwork = preNetwork + "def ${currentOutChanName}InList = new ChannelInputList($currentOutChanName)\n"
     swapChannelNames(ChanTypeEnum.list)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, "workers")
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : workers and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addGroup(" + returned[0] + ", " + returned[1] + " )) \n"
-//      }
-//    }
-
   } //end of AnyGroupList
 
   def ListGroupAny = { String processName, int starting, int ending ->
@@ -1214,19 +1210,6 @@ class CGPPlexingMethods {
     rvs = nextProcSpan(ending + 2)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.any2any()\n"
     swapChannelNames(ChanTypeEnum.any)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, "workers")
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : workers and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addGroup(" + returned[0] + ", " + returned[1] + " )) \n"
-//      }
-//    }
-
   } // end of ListGroupAny
 
   def ListGroupCollect = { String processName, int starting, int ending ->
@@ -1256,17 +1239,6 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2one()\n"
     swapChannelNames(ChanTypeEnum.one)
-
-//    if (logging) {
-//      def returned = getLogData(starting, "nodes")
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : stages and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addMCEngine (" + returned[0] + " )) \n"
-//      }
-//    }
   }  // end of MultiCoreEngine
 
   def StencilEngine = { String processName, int starting, int ending ->
@@ -1280,21 +1252,8 @@ class CGPPlexingMethods {
     def rvs = extractProcDefParts(starting)
     network += rvs[0] + "\n"
     network += "    input: ${currentInChanName}.in(),\n"
-//    if (logging) network += logChanAdd
     network += "    // no output channel required\n"
     copyProcProperties(rvs, starting, ending)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, "stages")
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : stages and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addPipe (" + returned[0] + ", " + returned[1] + " )) \n"
-//      }
-//    }
   } // end of OnePipelineCollect
 
   def OnePipelineOne = { String processName, int starting, int ending ->
@@ -1307,18 +1266,6 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2one()\n"
     swapChannelNames(ChanTypeEnum.one)
-
-//    //SH added JMK modified
-//    if (logging) {
-//      def returned = getLogData(starting, "stages")
-//      if (returned == [null, null]) {
-//        network += "getLogData returned null in $processName : stages and/or LogPhaseNames not found"
-//        error += " with errors, see the parsed output file"
-//      } else {
-//        network += "\n    //gppVis command\n"
-//        network += "    Visualiser.hb.getChildren().add(Visualiser.p.addPipe (" + returned[0] + ", " + returned[1] + " )) \n"
-//      }
-//    }
   } // end of OnePipelineOne
 
 // terminals

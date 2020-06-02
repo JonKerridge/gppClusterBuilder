@@ -1,5 +1,7 @@
 package mcpiDemo
 
+import groovyParallelPatterns.DataClass
+
 
 /**MCpiData is the object that is written to the Farm to tell the processes the operation they are to undertake.
  * It has a property instances that indicates the number of objects of this class
@@ -17,7 +19,7 @@ package mcpiDemo
  *
  */
 
-class MCpiData extends groovyParallelPatterns.DataClass {
+class MCpiData extends DataClass {
   int iterations = 0
   int within = 0
   static int instance = 0
@@ -74,8 +76,7 @@ class MCpiData extends groovyParallelPatterns.DataClass {
     def serMCpiData = new SerializedMCpiData()
     serMCpiData.iterations = this.iterations
     serMCpiData.within = this.within
-    serMCpiData.instance = this.instance
-//    println "instance = ${serMCpiData.instance}, ${serMCpiData.withinOp}"
+//    println "Serialized instance = ${serMCpiData.toString()}"
     return serMCpiData
   }
 

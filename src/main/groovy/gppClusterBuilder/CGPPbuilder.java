@@ -21,7 +21,7 @@ public class CGPPbuilder {
     /**
      *
      * @param args args[0] contains the full path name of a the file to be converted,
-     *             excluding the .gpp suffix
+     *             excluding the .cgpp suffix
      *
      */
     public static void main(String[] args) {
