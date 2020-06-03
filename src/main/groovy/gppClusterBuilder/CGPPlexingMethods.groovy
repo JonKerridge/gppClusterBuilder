@@ -14,13 +14,245 @@ class CGPPlexingMethods {
   ChanTypeEnum expectedInChan
   String chanSize
 
-  // source scripts
+  // source script
   List<String> scriptText = []
-  List <String> nodeLoaderText = []
-  List <String> nodeProcessText = []
-  List <String> hostLoaderText = []
-  List <String> hostProcessText = []
+//  List <String> nodeLoaderText = []
+//  List <String> nodeProcessText = []
+//  List <String> hostLoaderText = []
+//  List <String> hostProcessText = []
 
+  // texts of basic codes includes directly
+  // due to difficulty in loading files as part of the library
+  List <String> nodeLoaderText = [
+      'package baseFiles',
+      ' ',
+      'import gppClusterBuilder.LoaderConstants',
+      'import groovyJCSP.*',
+      'import jcsp.lang.*',
+      'import jcsp.net2.*',
+      'import jcsp.net2.mobile.*',
+      'import jcsp.net2.tcpip.*',
+      ' ',
+      'class BasicNodeLoader implements LoaderConstants{',
+      'static void main(String[] args) {',
+      'String hostIP = args[0] // host IP must be specified',
+      '// create this node',
+      'def nodeAddress = new TCPIPNodeAddress(1000)',
+      'Node.getInstance().init(nodeAddress)',
+      'String nodeIP = nodeAddress.getIpAddress()',
+      'println "Node $nodeIP running"',
+      '// create net input channel from host',
+      'NetChannelInput fromHost = NetChannel.numberedNet2One(1,',
+      'new CodeLoadingChannelFilter.FilterRX() )',
+      'def hostAddress = new TCPIPNodeAddress(hostIP, 2000)',
+      '// create host request output channel',
+      'def toHost = NetChannel.any2net(hostAddress, 1)',
+      '// send host the IP of this Node and get response',
+      'toHost.write(nodeIP)',
+      'assert fromHost.read() == acknowledgeNodeIPRead:',
+      '"Node Load - $nodeIP: expected acknowledgement during initialisation not received"',
+      '// read in and connect the Application Noide process from host',
+      'CSProcess nodeProcess = fromHost.read() as CSProcess',
+      'nodeProcess.connectFromHost(fromHost)',
+      '// acknowledge receipt of node process',
+      'toHost.write(nodeProcessRead)',
+      '// wait to receive start signal from host',
+      'assert fromHost.read() == startNodeProcess:',
+      '"Node Load - $nodeIP: expected start Node Process signal not received"',
+      '//  start node process',
+      'new PAR([nodeProcess]).run()',
+      '}',
+      '}'
+  ]
+  List <String> nodeProcessText = [
+      'package baseFiles',
+      ' ',
+      'import gppClusterBuilder.LoaderConstants',
+      'import gppClusterBuilder.NodeConnection',
+      'import jcsp.lang.CSProcess',
+      'import jcsp.net2.*',
+      ' ',
+      'class BasicNodeProcess implements CSProcess, Serializable, NodeConnection, LoaderConstants{',
+      'String nodeIP, hostIP',
+      'NetLocation toHostLocation',
+      'NetChannelInput fromHost',
+      ' ',
+      'def connectFromHost (NetChannelInput fromHost){',
+      'this.fromHost = fromHost',
+      '}',
+      ' ',
+      '@Override',
+      'void run() {',
+      'long initialTime = System.currentTimeMillis()',
+      '// create basic connections for node',
+      'NetChannelOutput node2host = NetChannel.one2net(toHostLocation as NetChannelLocation)',
+      'node2host.write(nodeProcessInitiation)',
+      '// read in application net input channel VCNs [ vcn, ... ]',
+      'List inputVCNs = fromHost.read() as List',
+      '//@inputVCNs',
+      ' ',
+      '// acknowledge creation of net input channels',
+      'node2host.write(nodeApplicationInChannelsCreated)',
+      ' ',
+      '// read in application net output channel locations [ [ip, vcn], ... ]',
+      'List outputVCNs = fromHost.read()',
+      '//@outputVCNs',
+      ' ',
+      '// acknowledge creation of net output channels',
+      'node2host.write(nodeApplicationOutChannelsCreated)',
+      'println "Node starting application process"',
+      'long processStart = System.currentTimeMillis()',
+      '// now start the process - inserted by builder',
+      '//@nodeProcess',
+      ' ',
+      'long processEnd = System.currentTimeMillis()',
+      'node2host.write([nodeIP, (processStart - initialTime), (processEnd - processStart)])',
+      '}',
+      '}'
+  ]
+  List <String> hostLoaderText = [
+      'package baseFiles',
+      ' ',
+      'import gppClusterBuilder.LoaderConstants',
+      'import groovyJCSP.*',
+      'import jcsp.net2.*',
+      'import jcsp.net2.mobile.*',
+      'import jcsp.net2.tcpip.*',
+      ' ',
+      'class BasicHostLoader implements LoaderConstants{',
+      'static void main(String[] args) {',
+      'int nodes = Integer.parseInt(args[0]) // number of nodes in cluster excluding host',
+      '// create node and net input channel used by NodeLoaders',
+      'def nodeAddress = new TCPIPNodeAddress(2000)',
+      'Node.getInstance().init(nodeAddress)',
+      'String hostIP = nodeAddress.getIpAddress()',
+      'println "Host $hostIP running with $nodes nodes"',
+      'NetChannelInput fromNodes = NetChannel.numberedNet2One(1 )',
+      '// wait for all the nodes to send their IP addresses',
+      '// create a List for the IPs',
+      'List <String> nodeIPs = []',
+      '// create list of individual net output channel to each node',
+      'List < NetChannelOutput> toNodes = []',
+      'for ( n in 0 ..< nodes) {',
+      'String nodeIP = (fromNodes.read() as String)',
+      'nodeIPs << nodeIP',
+      'toNodes << NetChannel.one2net(',
+      'new TCPIPNodeAddress(nodeIP,1000),',
+      '1,',
+      'new CodeLoadingChannelFilter.FilterTX())  // must be code loading because node process will be sent',
+      '}',
+      '// can now start timing as from now on the interactions are contiguous and',
+      '// do not rely on Nodes being started from command line',
+      'long initialTime = System.currentTimeMillis()',
+      '// acknowledge receipt of NodeIPs to nNodes',
+      'for ( n in 0 ..< nodes){',
+      'toNodes[n].write(acknowledgeNodeIPRead)',
+      '}',
+      '// now send the built Node process to each Node - name modified by builder',
+      '//@nodeProcess',
+      'for ( n in 0 ..< nodes){',
+      'toNodes[n].write(new BasicNodeProcess(',
+      'hostIP: hostIP,',
+      'nodeIP: nodeIPs[n],',
+      'toHostLocation: fromNodes.getLocation()',
+      ')',
+      ')',
+      '}',
+      '// now read acknowledgements from Nodes',
+      'for ( n in 0 ..< nodes){',
+      'assert  fromNodes.read() == nodeProcessRead :',
+      '"Failed to read Node Process read acknowledgement from ${nodeIPs[n]}"',
+      '}',
+      '// tell nodes to start their processes',
+      'for ( n in 0 ..< nodes){',
+      'toNodes[n].write(startNodeProcess)',
+      '}',
+      'println "Host running application process"',
+      'long processStart = System.currentTimeMillis()',
+      '// builder modifies the name of the host process',
+      '//@hostProcess',
+      'new PAR([new BasicHostProcess(',
+      'hostIP: hostIP,',
+      'nodeIPs: nodeIPs,',
+      'nodes2host: fromNodes,',
+      'host2nodes: toNodes',
+      ')]).run()',
+      ' ',
+      'long processEnd = System.currentTimeMillis()',
+      'println "Host Node: Load Phase= ${processStart - initialTime} " +',
+      '"Processing Phase = ${processEnd - processStart} " +',
+      '"Total time = ${processEnd - initialTime}"',
+      '}',
+      '}'
+  ]
+  List <String> hostProcessText = [
+      'package baseFiles',
+      ' ',
+      'import gppClusterBuilder.LoaderConstants',
+      'import jcsp.lang.*',
+      'import jcsp.net2.*',
+      ' ',
+      'class BasicHostProcess implements CSProcess, LoaderConstants{',
+      'String hostIP',
+      'List <String> nodeIPs',
+      'NetChannelInput nodes2host',
+      'List <NetChannelOutput> host2nodes',
+      ' ',
+      '@Override',
+      'void run() {',
+      'int nodes_Number = nodeIPs.size()',
+      '// create basic process connections for host',
+      'for ( n in 0 ..< nodes_Number) {',
+      '// wait for all nodes to start',
+      'assert nodes2host.read() == nodeProcessInitiation :',
+      '"Node ${nodeIPs[n]} failed to initialise node process"',
+      '// create host2nodes channels - already have node IPs',
+      '}',
+      'long initialTime = System.currentTimeMillis()',
+      '// send application channel data to nodes - inserted by Builder - also those at host',
+      'List inputVCNs   // each node gets a list of input VCNs',
+      '//@inputVCNs',
+      ' ',
+      'for ( n in 0 ..< nodes_Number) host2nodes[n].write(inputVCNs[n])',
+      ' ',
+      '//@hostInputs',
+      ' ',
+      '// now read acknowledgments',
+      'for ( n in 0 ..< nodes_Number){',
+      'assert nodes2host.read() == nodeApplicationInChannelsCreated :',
+      '"Node ${nodeIPs[n]} failed to create node to host link channels"',
+      '}',
+      '// each node gets a list [IP, vcn] to which it is connected',
+      'List outputVCNs',
+      '//@outputVCNs',
+      ' ',
+      'for ( n in 0 ..< nodes_Number) host2nodes[n].write(outputVCNs[n])',
+      ' ',
+      '//@hostOutputs',
+      ' ',
+      '// now read acknowledgments',
+      'for ( n in 0 ..< nodes_Number){',
+      'assert nodes2host.read() == nodeApplicationOutChannelsCreated :',
+      '"Node ${nodeIPs[n]} failed to create node to host link channels"',
+      '}',
+      '// all the net application channels have been created',
+      'long processStart = System.currentTimeMillis()',
+      '// now start the process - inserted by builder',
+      '//@hostProcess',
+      ' ',
+      ' ',
+      'long processEnd = System.currentTimeMillis()',
+      'println "Times           Load Process"',
+      'List times = [ ',
+      '    ["Host          ", (processStart - initialTime), (processEnd - processStart)] ' ,
+      ' ]',
+      'for ( n in 0 ..< nodes_Number){',
+      'times << (List)(nodes2host.read() )',
+      '}',
+      'times.each {println "$it"}',
+      '}',
+      '}'
+  ]
   // source inserts into node and host processes
   List <String>  nodeInputInsert = ["//node Input Insert\n"]
   List <String>  nodeOutputInsert = ["//node Output Insert\n"]
@@ -73,10 +305,10 @@ class CGPPlexingMethods {
 
   def getInputs(
       FileReader scriptReader,
-      FileReader nodeLoaderReader,
-      FileReader nodeProcessReader,
-      FileReader hostLoaderReader,
-      FileReader hostProcessReader,
+//      FileReader nodeLoaderReader,
+//      FileReader nodeProcessReader,
+//      FileReader hostLoaderReader,
+//      FileReader hostProcessReader,
       String appName) {
     this.appName = appName
     scriptReader.each { String line ->
@@ -85,41 +317,60 @@ class CGPPlexingMethods {
     }
     scriptReader.close()
 
-    nodeLoaderReader.each { String line ->
-      if (line.size() == 0) line = " " else line = line.trim()
-      nodeLoaderText << line
-    }
-    nodeLoaderReader.close()
+//    nodeLoaderReader.each { String line ->
+//      if (line.size() == 0) line = " " else line = line.trim()
+//      nodeLoaderText << line
+//    }
+//    nodeLoaderReader.close()
+//
+//    nodeProcessReader.each { String line ->
+//      if (line.size() == 0) line = " " else line = line.trim()
+//      nodeProcessText << line
+//    }
+//    nodeProcessReader.close()
+//
+//    hostLoaderReader.each { String line ->
+//      if (line.size() == 0) line = " " else line = line.trim()
+//      hostLoaderText << line
+//    }
+//    hostLoaderReader.close()
+//
+//    hostProcessReader.each { String line ->
+//      if (line.size() == 0) line = " " else line = line.trim()
+//      hostProcessText << line
+//    }
+//    hostProcessReader.close()
+//
+//    println "\n\nNodeLoaderText\n"
+//    nodeLoaderText.each{println "\'$it\',"}
+//    println "\n\nHostLoaderText\n"
+//    hostLoaderText.each{println "\'$it\',"}
+//    println "\n\nNodeProcessText\n"
+//    nodeProcessText.each{println "\'$it\',"}
+//    println "\n\nHostProcessText\n"
+//    hostProcessText.each{println "\'$it\',"}
 
-    nodeProcessReader.each { String line ->
-      if (line.size() == 0) line = " " else line = line.trim()
-      nodeProcessText << line
-    }
-    nodeProcessReader.close()
+//    List <String> nodeLoaderText = []
+//    List <String> nodeProcessText = []
+//    List <String> hostLoaderText = []
+//    List <String> hostProcessText = []
 
-    hostLoaderReader.each { String line ->
-      if (line.size() == 0) line = " " else line = line.trim()
-      hostLoaderText << line
-    }
-    hostLoaderReader.close()
 
-    hostProcessReader.each { String line ->
-      if (line.size() == 0) line = " " else line = line.trim()
-      hostProcessText << line
-    }
-    hostProcessReader.close()
+
+
+
 
     // copy package line and jcsp imports to output script texts
-    nodeLoaderOutText << scriptText[0] + "\n\n"
+    nodeLoaderOutText << scriptText[0] + "\n"
     nodeLoaderOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
     nodeLoaderOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
-    nodeProcessOutText << scriptText[0] + "\n\n"
+    nodeProcessOutText << scriptText[0] + "\n"
     nodeProcessOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
     nodeProcessOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
-    hostLoaderOutText << scriptText[0] + "\n\n"
+    hostLoaderOutText << scriptText[0] + "\n"
     hostLoaderOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
     hostLoaderOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
-    hostProcessOutText << scriptText[0] + "\n\n"
+    hostProcessOutText << scriptText[0] + "\n"
     hostProcessOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
     hostProcessOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
 
@@ -230,7 +481,7 @@ class CGPPlexingMethods {
             while (scriptText[lineNumber][l] == " ") l++
             String clusterString = scriptText[lineNumber][l]
             l++
-            while (scriptText[lineNumber][l] =~ "[0-9]") {
+            while ((l < scriptText[lineNumber].size()) && (scriptText[lineNumber][l] =~ "[0-9]")) {
               clusterString = scriptText[lineNumber][l]
               l++
             }

@@ -17,7 +17,7 @@ import groovyParallelPatterns.terminals.Emit
 // number of workers on each node
 int cores = 4
 // number of clusters
-int clusters = 1 //worker nodes
+int clusters = 1
 //@emit
 
 def emitDetails = new DataDetails(

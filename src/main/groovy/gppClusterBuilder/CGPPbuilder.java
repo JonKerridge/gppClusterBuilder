@@ -13,8 +13,73 @@ package gppClusterBuilder;
  * The argument to the program is a \path\filename that has a .cgpp suffix.  The
  * supplied argument should omit the suffix.  The output is the \path\filename now
  * with a .groovy suffix.  The output file can be executed as a groovy script.
- * Any errors will be placed in the output file at the place where they were detected.<p>
+ * Any errors will be placed in an output file at the place where they were detected.<p>
  *
+ * The structure of a .cgpp file is as follows using an example that calculate the
+ * Mandelbrot set, as given in the project cgppDemos ().
+ * <pre>
+ * package demoApplications.mandelbrot
+ *
+ * import groovyParallelPatterns.DataDetails
+ * import groovyParallelPatterns.ResultDetails
+ * import groovyParallelPatterns.cluster.connectors.NodeRequestingFanAny
+ * import groovyParallelPatterns.cluster.connectors.OneNodeRequestedList
+ * import groovyParallelPatterns.connectors.reducers.AnyFanOne
+ * import groovyParallelPatterns.functionals.groups.AnyGroupAny
+ * import groovyParallelPatterns.terminals.Collect
+ * import groovyParallelPatterns.terminals.Emit
+ *
+ * import demoApplications.mandelbrot.MandelbrotLine as ml
+ * import demoApplications.mandelbrot.MandelbrotLineCollect as mlc
+ * import demoApplications.mandelbrot.SerializedMandelbrotLine as sml
+ *
+ * // number of workers on each node
+ * int cores = 4
+ * // number of clusters
+ * int clusters = 1
+ *
+ * //@emit
+ * //application variables
+ * int width = 350
+ * int height = 200
+ * int maxIterations = 100
+ * double pixelDelta = 0.01
+ *
+ * def emitDetails = new DataDetails(dName: ml.getName(),
+ *     dInitMethod: ml.init,
+ *     dInitData: [width, height, pixelDelta, maxIterations],
+ *     dCreateMethod: ml.create
+ * )
+ * def emit = new Emit (
+ *     eDetails: emitDetails
+ * )
+ * def onrl = new OneNodeRequestedList()
+ *
+ * //@cluster clusters
+ * def nrfa = new NodeRequestingFanAny(
+ *     destinations: cores
+ * )
+ * def group = new AnyGroupAny(
+ *     workers: cores,
+ *     function: sml.calcColour
+ * )
+ * def afo1 = new AnyFanOne(
+ *     sources: cores
+ * )
+ *
+ * //@collect
+ * def resultDetails = new ResultDetails(rName: mlc.getName(),
+ *     rInitMethod: mlc.init,
+ *     rCollectMethod: mlc.collector,
+ *     rFinaliseMethod: mlc.finalise )
+ *
+ * def afo2 = new AnyFanOne(
+ *     sources: clusters
+ * )
+ * def collector = new Collect(
+ *     rDetails: resultDetails
+ * )
+ * </pre>
  */
 public class CGPPbuilder {
 
