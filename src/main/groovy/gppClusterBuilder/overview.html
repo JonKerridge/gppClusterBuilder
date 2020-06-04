@@ -5,32 +5,40 @@ copyright 2015-20 Jon Kerridge Edinburgh Napier University<p>
 contact j.kerridge @ napier.ac.uk <p>
 
 The gppCluster Builder program converts the source definition of an application defined using
-     the GPP library into a form that can be executed as a Groovy script. <p>
+     the GPP library into a form that can be executed as a set of Groovy scripts, that enable code to be run
+     on a network of workstations. <p>
 
-The source file is provided as \path\filename.cgpp .
+The source file is provided as \path\App.cgpp .
      It is assumed that the suffix cgpp should be associated with groovy and means that the source
      is checked by the Groovy system during its creation.
      The source should contain all the required data definitions and assumes
      that all the required user developed code is available.
      These data definitions should precede the definition of the required process definitions.
-     The format of the source file should be:<p>
+     <p>
 
-<pre>
-Constant declarations
-Definitions of GPP Data, Result and Local and other Detail data objects
-Initialisation code to be obeyed before the process network is created
-Process definitions omitting input and output properties
-     The definitions should appear in the order in which data flows
-     through the process network; ordering is crucial.
-Finalisation code
-</pre>
+The gppClusterBuilder program creates four files called
+     \path\AppHostLoader.groovy     args[0] = number of worker nodes in the cluster
+     \path\AppNodeLoader.groovy     args[0] = hostIP address
+     \path\AppHostProcess.groovy
+     \path\AppNodeProcess.groovy.
 
-Examples of the additional coding could include the initialisation of a start time with the
-corresponding finalisation code being to print out the total execution time.<p>
+     Only the loader programs can be executed.  The NodeLoader is, in fact, not application specific.
+     Thus once a version of NodeLoader exists as a jar file then it can be used to load any application.
 
-The gppClusterBuilder program create a file called \path\filename.groovy.
+     The other files are application specific.  In particular, the emit and collect process elements are
+     presumed to execute on the same node in a workstation.  The same workstation can also be one of the nodes
+     used in the application.
+
+     The package information contains more detail of the requiremtns of the App.cgpp file.
 
      If the transformation generated errors then the output files will contain an indication of the
      error at the place where it was found in the source file.<p>
 
-If the transformation was successful the output files will contain the application in a form that can be executed as Groovy scripts.
+     If the transformation was successful the output files will contain the application in a form that can
+     be executed as Groovy scripts.
+
+     The library contains an example, using a solution to Montecarlo pi, that runs as a cluster
+     on a single workstation.
+
+     The built system will output the time taken to load the application and the processing time
+     on each node of the cluster.
