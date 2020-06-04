@@ -1,22 +1,97 @@
-plugins {
-    id 'groovy'
-    id 'java'
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
 }
 
+plugins {
+//    id 'application'
+    id 'groovy'
+    id 'java'
+    id "com.jfrog.bintray" version "1.8.4"
+}
 group 'gppClusterBuilder'
 version '1.0.1'
 
-repositories {
-    mavenCentral()
-    jcenter()
-    maven {
-        url "https://dl.bintray.com/jonkerridge/jcsp"
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'maven'
+
+Properties properties = new Properties()
+try {
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+} catch (Exception e) {
+    logger.warn("Missing local.properties - won't be able to upload to Bintray.  \nPlease add local.properties with properties bintray.user and bintray.apikey.")
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+        // following required for groovy-all:3.0.0
+        maven {
+            url "https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-all"
+        }
+        maven {
+            url "https://dl.bintray.com/jonkerridge/gpp"
+        }
     }
-    maven {
-        url "https://dl.bintray.com/jonkerridge/gpp"
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'java'
+    apply plugin: 'groovy'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar, javadocJar
+}
+
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            groupId group
+            artifactId rootProject.name
+            version version
+
+            artifact sourcesJar {
+                classifier "sources"
+            }
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+        }
     }
-    maven {
-        url "https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-all"
+}
+
+bintray {
+    user = properties.containsKey('bintray.user') ? properties.getProperty('bintray.user') : System.getenv('BINTRAY_USER')
+    key = properties.containsKey('bintray.apikey') ? properties.getProperty('bintray.apikey') : System.getenv('BINTRAY_API_KEY')
+//  println " write keys = $user, $key"
+    publications = ['MyPublication']
+    pkg {
+        repo = 'gpp'
+        name = rootProject.name
+        userOrg = user
+        licenses = ['Apache-2.0', 'LGPL-2.1']
+        vcsUrl = 'https://github.com/JonKerridge/gppClusterBuilder'
+        labels = ['builder', 'groovyParallelPatterns', 'parallel patterns and skeletons']
+        publicDownloadNumbers = true
+        version {
+            name = project.property('version')
+            desc = 'gppClusterBuilder compiled using groovy-all-3.0.4 and Java 11'
+        }
     }
 }
 
