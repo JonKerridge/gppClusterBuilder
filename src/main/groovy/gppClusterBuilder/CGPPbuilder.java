@@ -16,7 +16,22 @@ package gppClusterBuilder;
  * Any errors will be placed in an output file at the place where they were detected.<p>
  *
  * The structure of a .cgpp file is as follows using an example that calculate the
- * Mandelbrot set, as given in the project cgppDemos ().
+ * Mandelbrot set, as given in the project cgppDemos
+ * see
+ * https://github.com/JonKerridge/GPP_Library , for the definition of library processes
+ * https://github.com/JonKerridge/gppClusterBuilder , for the associated builder
+ * https://github.com/JonKerridge/cgppDemos for an example of their use.<p>
+ *
+ *     <p>The user is advised to associate the file type .cgpp with groovy so that any IDE can
+ *     check that the definition as it is entered.  This will ensure the required imports will be
+ *     created automatically.</p>
+ *     <p>
+ *         Any variable initialisations should be entered immediately after the imports.
+ *         Each section of the specification is headed by an annotation;
+ *         //@emit, //@cluster and //@collect.
+ *         Any variables and object definitions should proceed the definition of the processes
+ *         required in that part of the specification, for example emitDetails.
+ *     </p>
  * <pre>
  * package demoApplications.mandelbrot
  *
@@ -50,12 +65,14 @@ package gppClusterBuilder;
  *     dInitData: [width, height, pixelDelta, maxIterations],
  *     dCreateMethod: ml.create
  * )
+ * // emit process network
  * def emit = new Emit (
  *     eDetails: emitDetails
  * )
  * def onrl = new OneNodeRequestedList()
  *
  * //@cluster clusters
+ * // cluster process networks
  * def nrfa = new NodeRequestingFanAny(
  *     destinations: cores
  * )
@@ -73,6 +90,7 @@ package gppClusterBuilder;
  *     rCollectMethod: mlc.collector,
  *     rFinaliseMethod: mlc.finalise )
  *
+ * // collect processes
  * def afo2 = new AnyFanOne(
  *     sources: clusters
  * )
