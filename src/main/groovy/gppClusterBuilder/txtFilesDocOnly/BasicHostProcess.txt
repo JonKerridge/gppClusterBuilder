@@ -54,13 +54,15 @@ class BasicHostProcess implements CSProcess, LoaderConstants{
 
 
     long processEnd = System.currentTimeMillis()
+    println "Host application component has finished - collecting times"
+    for ( n in 1 .. nodes_Number){
+      times << (List)(nodes2host.read() )
+      println "Host has read times from node ${times[n][0]}"
+    }
     println "Times           Load Process"
     List times = [
         [ "Host          ", (processStart - initialTime), (processEnd - processStart)]
       ]
-    for ( n in 0 ..< nodes_Number){
-      times << (List)(nodes2host.read() )
-    }
     times.each {println "$it"}
   }
 }

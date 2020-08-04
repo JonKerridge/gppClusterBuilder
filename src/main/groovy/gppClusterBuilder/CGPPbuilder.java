@@ -1,6 +1,8 @@
 package gppClusterBuilder;
 
 
+import java.util.Scanner;
+
 /**
  * CGPPbuilder provides a means of transforming a file containing the definition of a
  * CGPP defined application, in which, the process definitions omit the communication and
@@ -20,7 +22,7 @@ package gppClusterBuilder;
  * see
  * https://github.com/JonKerridge/GPP_Library , for the definition of library processes
  * https://github.com/JonKerridge/gppClusterBuilder , for the associated builder
- * https://github.com/JonKerridge/cgppDemos for an example of their use.<p>
+ * https://github.com/JonKerridge/cgppDemos for an example of their use.
  *
  *     <p>The user is advised to associate the file type .cgpp with groovy so that any IDE can
  *     check that the definition as it is entered.  This will ensure the required imports will be
@@ -108,10 +110,14 @@ public class CGPPbuilder {
      *
      */
     public static void main(String[] args) {
-        String fileRoot = args[0];
+        Scanner scan = new Scanner(System.in);
+        String fileRoot = "D:\\IJGradle\\gppClusterBuilder\\src\\main\\groovy\\mcpiDemo\\";
+        System.out.println("Complete Path Name of File to Build? (exclude .cgpp suffix)");
+        String fileName = scan.nextLine();
         CGPPlexFileHanding cgppLexer = new CGPPlexFileHanding();
-        cgppLexer.openFiles(fileRoot);
-        System.out.println( "Transforming: " + fileRoot + ".cgpp");
+        String pathName = fileRoot + fileName;
+        cgppLexer.openFiles(fileRoot + fileName);
+        System.out.println( "Transforming: " + pathName + ".cgpp");
         String error = cgppLexer.parse();
         if (error.equals("")){
             System.out.println("Build Successful");
@@ -126,7 +132,6 @@ public class CGPPbuilder {
      * is a collection of four files with the a .groovy suffix that can be executed as a groovy script.
      */
     public static void runClusterBuilder(String fileRoot){
-//        String inFile = fileRoot +  "_gpp.groovy";
         CGPPlexFileHanding cgppLexer = new CGPPlexFileHanding();
         cgppLexer.openFiles(fileRoot);
         System.out.println( "Transforming: " + fileRoot + ".cggp");

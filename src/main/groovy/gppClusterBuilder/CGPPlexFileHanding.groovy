@@ -18,14 +18,9 @@ class CGPPlexFileHanding {
 
 	def openFiles ( String fileRoot  ) {
 		String dir = System.getProperty("user.dir") + "/src/main/groovy"
-//		println "Builder Dir = $dir"
-		// create readers for all the input files
+		// create readers for all the script file
 		String scriptFileName = fileRoot + ".cgpp"
 		scriptReader = new FileReader(new File(scriptFileName))
-//		nodeLoaderReader = new FileReader(new File("$dir/gppClusterBuilder/BasicNodeLoader.txt"))
-//		hostLoaderReader = new FileReader(new File("$dir/gppClusterBuilder/BasicHostLoader.txt"))
-//		nodeProcessReader = new FileReader(new File("$dir/gppClusterBuilder/BasicNodeProcess.txt"))
-//		hostProcessReader = new FileReader(new File("$dir/gppClusterBuilder/BasicHostProcess.txt"))
 		// create writers for all the output files and delete any pre-existing files
 		String nodeLoaderName = fileRoot + "NodeLoader.groovy"
 		String nodeProcessName = fileRoot + "NodeProcess.groovy"
@@ -54,10 +49,6 @@ class CGPPlexFileHanding {
 	def readInFiles = {
 		gppLex.getInputs(
 				scriptReader,
-//				nodeLoaderReader,
-//				nodeProcessReader,
-//				hostLoaderReader,
-//				hostProcessReader,
 				appName)
 	}
 

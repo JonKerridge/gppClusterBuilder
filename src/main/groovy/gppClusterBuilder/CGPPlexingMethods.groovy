@@ -16,12 +16,8 @@ class CGPPlexingMethods {
 
   // source script
   List<String> scriptText = []
-//  List <String> nodeLoaderText = []
-//  List <String> nodeProcessText = []
-//  List <String> hostLoaderText = []
-//  List <String> hostProcessText = []
 
-  // texts of basic codes includes directly
+  // texts of basic codes included directly
   // due to difficulty in loading files as part of the library
   List <String> nodeLoaderText = [
       'package baseFiles',
@@ -35,7 +31,7 @@ class CGPPlexingMethods {
       ' ',
       'class BasicNodeLoader implements LoaderConstants{',
       'static void main(String[] args) {',
-      'String hostIP = args[0] // host IP must be specified',
+      '//@hostIPAddress',
       '// create this node',
       'def nodeAddress = new TCPIPNodeAddress(1000)',
       'Node.getInstance().init(nodeAddress)',
@@ -106,7 +102,9 @@ class CGPPlexingMethods {
       '//@nodeProcess',
       ' ',
       'long processEnd = System.currentTimeMillis()',
+      'println "Node application component has Finished"\n',
       'node2host.write([nodeIP, (processStart - initialTime), (processEnd - processStart)])',
+      'println " Node $nodeIP has sent times to host"\n',
       '}',
       '}'
   ]
@@ -121,7 +119,7 @@ class CGPPlexingMethods {
       ' ',
       'class BasicHostLoader implements LoaderConstants{',
       'static void main(String[] args) {',
-      'int nodes = Integer.parseInt(args[0]) // number of nodes in cluster excluding host',
+      '//@nodeSize',
       '// create node and net input channel used by NodeLoaders',
       'def nodeAddress = new TCPIPNodeAddress(2000)',
       'Node.getInstance().init(nodeAddress)',
@@ -152,11 +150,11 @@ class CGPPlexingMethods {
       '//@nodeProcess',
       'for ( n in 0 ..< nodes){',
       'toNodes[n].write(new BasicNodeProcess(',
-      'hostIP: hostIP,',
-      'nodeIP: nodeIPs[n],',
-      'toHostLocation: fromNodes.getLocation()',
-      ')',
-      ')',
+      '    hostIP: hostIP,',
+      '    nodeIP: nodeIPs[n],',
+      '    toHostLocation: fromNodes.getLocation()',
+      '  )',
+      '  )',
       '}',
       '// now read acknowledgements from Nodes',
       'for ( n in 0 ..< nodes){',
@@ -203,10 +201,10 @@ class CGPPlexingMethods {
       'int nodes_Number = nodeIPs.size()',
       '// create basic process connections for host',
       'for ( n in 0 ..< nodes_Number) {',
-      '// wait for all nodes to start',
-      'assert nodes2host.read() == nodeProcessInitiation :',
-      '"Node ${nodeIPs[n]} failed to initialise node process"',
-      '// create host2nodes channels - already have node IPs',
+      '  // wait for all nodes to start',
+      '  assert nodes2host.read() == nodeProcessInitiation :',
+      '    "Node ${nodeIPs[n]} failed to initialise node process"',
+      '  // create host2nodes channels - already have node IPs',
       '}',
       'long initialTime = System.currentTimeMillis()',
       '// send application channel data to nodes - inserted by Builder - also those at host',
@@ -219,8 +217,8 @@ class CGPPlexingMethods {
       ' ',
       '// now read acknowledgments',
       'for ( n in 0 ..< nodes_Number){',
-      'assert nodes2host.read() == nodeApplicationInChannelsCreated :',
-      '"Node ${nodeIPs[n]} failed to create node to host link channels"',
+      '  assert nodes2host.read() == nodeApplicationInChannelsCreated :',
+      '    "Node ${nodeIPs[n]} failed to create node to host link channels"',
       '}',
       '// each node gets a list [IP, vcn] to which it is connected',
       'List outputVCNs',
@@ -232,8 +230,8 @@ class CGPPlexingMethods {
       ' ',
       '// now read acknowledgments',
       'for ( n in 0 ..< nodes_Number){',
-      'assert nodes2host.read() == nodeApplicationOutChannelsCreated :',
-      '"Node ${nodeIPs[n]} failed to create node to host link channels"',
+      '  assert nodes2host.read() == nodeApplicationOutChannelsCreated :',
+      '    "Node ${nodeIPs[n]} failed to create node to host link channels"',
       '}',
       '// all the net application channels have been created',
       'long processStart = System.currentTimeMillis()',
@@ -242,13 +240,15 @@ class CGPPlexingMethods {
       ' ',
       ' ',
       'long processEnd = System.currentTimeMillis()',
-      'println "Times           Load Process"',
+      'println "Host application component has finished - collecting times"',
       'List times = [ ',
-      '    ["Host          ", (processStart - initialTime), (processEnd - processStart)] ' ,
+      '    ["Host         ", (processStart - initialTime), (processEnd - processStart)] ' ,
       ' ]',
-      'for ( n in 0 ..< nodes_Number){',
-      'times << (List)(nodes2host.read() )',
+      'for ( n in 1 .. nodes_Number){',
+      '  times << (List)(nodes2host.read() )',
+      '  println "Host has read times from node ${times[n][0]}"',
       '}',
+      'println "Times           Load Process"',
       'times.each {println "$it"}',
       '}',
       '}'
@@ -271,7 +271,7 @@ class CGPPlexingMethods {
 
   // names of net channels
   String emitRequestName, emitResponseName, nodeRequestName, nodeResponseName
-  String nodeOutputName, collectInputName
+  String nodeOutputName, collectInputName, hostIPText
 
   // records if first process in collect part is List or Any
   boolean collectByList = false
@@ -305,10 +305,6 @@ class CGPPlexingMethods {
 
   def getInputs(
       FileReader scriptReader,
-//      FileReader nodeLoaderReader,
-//      FileReader nodeProcessReader,
-//      FileReader hostLoaderReader,
-//      FileReader hostProcessReader,
       String appName) {
     this.appName = appName
     scriptReader.each { String line ->
@@ -316,49 +312,6 @@ class CGPPlexingMethods {
       scriptText << line
     }
     scriptReader.close()
-
-//    nodeLoaderReader.each { String line ->
-//      if (line.size() == 0) line = " " else line = line.trim()
-//      nodeLoaderText << line
-//    }
-//    nodeLoaderReader.close()
-//
-//    nodeProcessReader.each { String line ->
-//      if (line.size() == 0) line = " " else line = line.trim()
-//      nodeProcessText << line
-//    }
-//    nodeProcessReader.close()
-//
-//    hostLoaderReader.each { String line ->
-//      if (line.size() == 0) line = " " else line = line.trim()
-//      hostLoaderText << line
-//    }
-//    hostLoaderReader.close()
-//
-//    hostProcessReader.each { String line ->
-//      if (line.size() == 0) line = " " else line = line.trim()
-//      hostProcessText << line
-//    }
-//    hostProcessReader.close()
-//
-//    println "\n\nNodeLoaderText\n"
-//    nodeLoaderText.each{println "\'$it\',"}
-//    println "\n\nHostLoaderText\n"
-//    hostLoaderText.each{println "\'$it\',"}
-//    println "\n\nNodeProcessText\n"
-//    nodeProcessText.each{println "\'$it\',"}
-//    println "\n\nHostProcessText\n"
-//    hostProcessText.each{println "\'$it\',"}
-
-//    List <String> nodeLoaderText = []
-//    List <String> nodeProcessText = []
-//    List <String> hostLoaderText = []
-//    List <String> hostProcessText = []
-
-
-
-
-
 
     // copy package line and jcsp imports to output script texts
     nodeLoaderOutText << scriptText[0] + "\n"
@@ -433,9 +386,12 @@ class CGPPlexingMethods {
     // now find the start and end line of each section in script
     cLine = scriptCurrentLine
     while (!(scriptText[cLine].startsWith("//@emit"))) cLine++
+    // host IP is on cLine so extract it
+    hostIPText = scriptText[cLine].substring(7).trim()
+    println "Host IP is $hostIPText"
     emitStart = cLine + 1
     cLine++
-
+// todo make it so that we can detect more than one cluster
     while (!(scriptText[cLine].startsWith("//@cluster"))) cLine++
     clusterStart = cLine + 1
     emitEnd = cLine - 1
@@ -495,12 +451,19 @@ class CGPPlexingMethods {
         }
       }
     }
+    println "Cluster Size is $clusterSize"
   } // end of findClusterSize
 
   def processLoaders = {
     // find start of class, replace Basic with appName and copy to nodeLoaderOutText
     while (!(nodeLoaderText[nodeLoaderLine].startsWith("class"))) nodeLoaderLine++
     nodeLoaderOutText << nodeLoaderText[nodeLoaderLine].replace("Basic", appName) + "\n"
+    nodeLoaderLine++
+    nodeLoaderOutText << nodeLoaderText[nodeLoaderLine] + "\n" // static main method line
+    nodeLoaderLine++
+    // modify the //@hostIPAddress annotation
+    nodeLoaderOutText << nodeLoaderText[nodeLoaderLine].replace(
+        "//@hostIPAddress","String hostIP = '$hostIPText' ") + "\n"
     // copy rest of text straight over
     nodeLoaderLine++
     while (nodeLoaderLine < nodeLoaderText.size()){
@@ -510,6 +473,12 @@ class CGPPlexingMethods {
     // find start of class, replace Basic with appName and copy to nodeLoaderOutText
     while (!(hostLoaderText[hostLoaderLine].startsWith("class"))) hostLoaderLine++
     hostLoaderOutText << hostLoaderText[hostLoaderLine].replace("Basic", appName) + "\n"
+    hostLoaderLine++
+    hostLoaderOutText << hostLoaderText[hostLoaderLine] +"\n" // static main method line
+    hostLoaderLine++
+    // modify the //@nodeSize annotation
+    hostLoaderOutText << hostLoaderText[hostLoaderLine].replace(
+        "//@nodeSize","int nodes = $clusterSize") + "\n"
     // now copy rest of text replacing two instances of Basic with appName
     hostLoaderLine++
     while (hostLoaderLine < hostLoaderText.size()) {
@@ -1127,7 +1096,10 @@ class CGPPlexingMethods {
     checkNoProperties(rvs)
     rvs = nextProcSpan(ending + 2)
     String returnedChanSize = scanChanSize(rvs)
-    if (returnedChanSize != null) chanSize = returnedChanSize
+    if (returnedChanSize != null)
+      chanSize = returnedChanSize
+    else
+      error = error + "chan size for $processName is null"
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2oneArray($chanSize)\n"
     preNetwork = preNetwork + "def ${currentOutChanName}OutList = new ChannelOutputList($currentOutChanName)\n"
     preNetwork = preNetwork + "def ${currentOutChanName}InList = new ChannelInputList($currentOutChanName)\n"
@@ -1160,6 +1132,10 @@ class CGPPlexingMethods {
     network += "    request: ${emitRequestName},\n"
     network += "    response: ${emitResponseName},\n"
     copyProcProperties(rvs, starting, ending)
+  }
+
+  def OneNodeRequestedCastList = { String processName, int starting, int ending ->
+    OneNodeRequestedList(processName, starting, ending)
   }
   // net specialisations of preexisting spreaders and reducers
   def inNetAnyFanOne = { String processName, int starting, int ending ->

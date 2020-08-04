@@ -1,12 +1,14 @@
 package mcpiDemo
 
+import groovy.transform.AutoClone
+import groovy.transform.AutoCloneStyle
 import groovyParallelPatterns.DataClass
 
+@AutoClone(style = AutoCloneStyle.SERIALIZATION)
 
 class SerializedMCpiData extends DataClass {
   int iterations = 0
   int within = 0
-  static int instance = 0
   static String withinOp = "getWithin"
   int instanceNumber
 
@@ -30,16 +32,16 @@ class SerializedMCpiData extends DataClass {
     return completedOK
   }
 
-  @Override
-  SerializedMCpiData clone() {
-    SerializedMCpiData newClone = new SerializedMCpiData()
-    newClone.iterations = this.iterations
-    newClone.within = this.within
-    newClone.instanceNumber = this.instance
-    instance++
-//    println "cloned ${newClone.toString()}"
-    return newClone
-  }
+//  @Override
+//  SerializedMCpiData clone() {
+//    SerializedMCpiData newClone = new SerializedMCpiData()
+//    newClone.iterations = this.iterations
+//    newClone.within = this.within
+//    newClone.instanceNumber = this.instance
+//    instance++
+////    println "cloned ${newClone.toString()}"
+//    return newClone
+//  }
 
   String toString (){
     String s = "SerializedMCpiData: $instanceNumber, $iterations, $within "

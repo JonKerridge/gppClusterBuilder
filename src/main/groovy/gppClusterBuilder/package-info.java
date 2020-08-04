@@ -13,13 +13,13 @@
  * which the data flows through the process network.<p>
  *
  * The four files will be of the form ?HostLoader.groovy, ?NodeLoader.groovy, ?HostProcess.groovy
- * and ?NodeProcess.groovy.<p>
+ * and ?NodeProcess.groovy.
  *
  * The script ?HostLoader should be run first on the intial or host node of the network.
  * This script has an argument; the number of other nodes in the cluster to be used.<p>
  *
  * The ?NodeLoader script should be run on each of the required nodes in the cluster.
- * This script has an argument; the IP address of the Host Node.<p>
+ * This script has an argument; the IP address of the Host Node.
  *
  */
 

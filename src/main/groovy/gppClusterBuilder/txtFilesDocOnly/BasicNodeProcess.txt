@@ -39,6 +39,8 @@ class BasicNodeProcess implements CSProcess, Serializable, NodeConnection, Loade
     //@nodeProcess
 
     long processEnd = System.currentTimeMillis()
+    println "Node application component has Finished"
     node2host.write([nodeIP, (processStart - initialTime), (processEnd - processStart)])
+    println " Node $nodeIP has sent times to host"
   }
 }
