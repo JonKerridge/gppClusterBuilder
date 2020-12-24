@@ -12,7 +12,17 @@ plugins {
     id "com.jfrog.bintray" version "1.8.4"
 }
 group 'gppClusterBuilder'
-version '1.0.1'
+version '1.0.2'
+
+// version 1.0.1 was the initial working version
+// version 1.0.2 added tests to make sure args in the loaders was non-zero
+//               and processed further processes NetList, ListNet and
+//               inNetOneFanAny
+
+// used for local testing of new version
+def jcspLib = "C:/jcspLib"
+def gppLibraryJarFile = "groovyParallelPatterns-1.0.8.jar"
+//def gppBuilderJarFile = "gppBuilder-1.0.7.jar"
 
 apply plugin: 'groovy'
 apply plugin: 'java'
@@ -35,6 +45,9 @@ allprojects {
         }
         maven {
             url "https://dl.bintray.com/jonkerridge/gpp"
+        }
+        maven {
+            url "https://dl.bintray.com/jonkerridge/jcsp"
         }
     }
     apply plugin: 'maven'
@@ -96,10 +109,13 @@ bintray {
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:3.0.4'
+    compile 'org.codehaus.groovy:groovy-all:3.0.5'
     compile 'cspforjava:jcsp:1.1.0'
-    compile 'groovyJCSP:groovyJCSP:1.1.3'
+    compile 'groovyJCSP:groovyJCSP:1.1.5'
+    compile "gppBuilder:gppBuilder:1.0.6"
     compile 'groovyParallelPatterns:groovyParallelPatterns:1.0.6'
+//    compile fileTree(dir: "$jcspLib", include: ["$gppLibraryJarFile"])
+
 }
 
 task copyLib ( type: Copy){

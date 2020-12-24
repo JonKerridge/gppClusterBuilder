@@ -1137,7 +1137,43 @@ class CGPPlexingMethods {
   def OneNodeRequestedCastList = { String processName, int starting, int ending ->
     OneNodeRequestedList(processName, starting, ending)
   }
-  // net specialisations of preexisting spreaders and reducers
+
+  // List2Net and NetInputs2List processes
+  /*
+  The intended use of these processes is that each Cluster will output using a List2Net process
+  netChannelOutputList having the same size as the number of workers in preceding ListGroupList.
+
+  Conversely a NetInputs2List process will input using clusters x workers netChannelInputList,
+  which can then be processed by a following ListFanOne ListMergeOne or ListGroupCollect.
+
+  It is anticipated that it will be better to do the merging of output streams in the
+  Collect process, which is essentially waiting while the clusters are busy!
+
+  This supposition may have to change if we permit a sequence of clusters with data
+  passed over cluster netChannelList instances by use of a different process, say Net2List.
+   */
+//todo
+  def outNetList2Net = { String processName, int starting, int ending ->
+    println "$processName: $starting, $ending"
+    // copied from ListListGroup needs modifying to include chanoutname
+    confirmChannel(processName, ChanTypeEnum.list)
+    def rvs = extractProcDefParts(starting)
+    network += rvs[0] + "\n"
+    network += "    inputList: ${currentInChanName}InList,\n"
+    network += "    outputList: ${currentOutChanName}OutList,\n"
+    copyProcProperties(rvs, starting, ending)
+    preNetwork = preNetwork + "def $currentOutChanName = Channel.one2oneArray($chanSize)\n"
+    preNetwork = preNetwork + "def ${currentOutChanName}OutList = new ChannelOutputList($currentOutChanName)\n"
+    preNetwork = preNetwork + "def ${currentOutChanName}InList = new ChannelInputList($currentOutChanName)\n"
+    swapChannelNames(ChanTypeEnum.list)
+
+  }
+
+  def inNetNetInputs2List = { String processName, int starting, int ending ->
+    println "$processName: $starting, $ending"
+  }
+
+  // net specialisations of pre-existing spreaders and reducers
   def inNetAnyFanOne = { String processName, int starting, int ending ->
 //    println "inNet$processName: $starting, $ending"
 //    println "net input name is $collectInputName"
@@ -1277,12 +1313,6 @@ class CGPPlexingMethods {
     copyProcProperties(rvs, starting, ending)
     preNetwork = preNetwork + "def $currentOutChanName = Channel.one2any()\n"
     swapChannelNames(ChanTypeEnum.any)
-
-//    //SH added modified by JMK
-//    if (logging) {
-//      network += "\n    //gppVis command\n"
-//      network += "    Visualiser.hb.getChildren().add(new Connector(Connector.TYPE.SPREADER)) \n"
-//    }
   } //end of AnyFanAny
 
   def OneFanAny = { String processName, int starting, int ending ->
@@ -1345,16 +1375,6 @@ class CGPPlexingMethods {
   def GroupOfPipelineCollectPattern = { String processName, int starting, int ending ->
     patternProcess ( processName, starting, ending )
   }
-
-//// evolutionary
-//
-//  def ParallelClientServerEngine = { String processName, int starting, int ending ->
-////          println "$processName: $starting, $ending"
-//    pattern = true
-//    def rvs = extractProcDefParts(starting)
-//    network += rvs[0] + "\n"
-//    copyProcProperties(rvs, starting, ending)
-//  } // end of ParallelClientServerEngine
 
 // composites
   def AnyGroupOfPipelineCollects = { String processName, int starting, int ending ->

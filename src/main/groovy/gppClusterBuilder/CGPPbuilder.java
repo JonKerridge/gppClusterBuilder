@@ -112,7 +112,7 @@ public class CGPPbuilder {
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
         String fileRoot = "D:\\IJGradle\\gppClusterBuilder\\src\\main\\groovy\\mcpiDemo\\";
-        System.out.println("Complete Path Name of File to Build? (exclude .cgpp suffix)");
+        System.out.println("Name of File to Build? (exclude .cgpp suffix)");
         String fileName = scan.nextLine();
         CGPPlexFileHanding cgppLexer = new CGPPlexFileHanding();
         String pathName = fileRoot + fileName;

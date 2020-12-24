@@ -49,5 +49,5 @@ McPi9     emit ONRCL    NRSCL LGL LFO   AFO Collect
 McPi10    emit ONRL     NRPCL LGL LFO   AFO Collect
 McPi11    emit ONRCL    NRPCL LGL LFO   AFO Collect
 
-
+McPi12     emit ONRL     NRFL LGL L2N    NI2L LFO Collect
  */

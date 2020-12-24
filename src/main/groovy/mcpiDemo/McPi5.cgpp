@@ -2,8 +2,8 @@ package mcpiDemo
 
 import groovyParallelPatterns.DataDetails
 import groovyParallelPatterns.ResultDetails
-import groovyParallelPatterns.cluster.connectors.List2Net
-import groovyParallelPatterns.cluster.connectors.Net2List
+//import groovyParallelPatterns.cluster.connectors.List2Net
+//import groovyParallelPatterns.cluster.connectors.Net2List
 import groovyParallelPatterns.cluster.connectors.NodeRequestingFanAny
 import groovyParallelPatterns.cluster.connectors.NodeRequestingFanList
 import groovyParallelPatterns.cluster.connectors.OneNodeRequestedList
@@ -54,6 +54,7 @@ def resultDetails = new ResultDetails(
     rName: MCpiResultsSerialised.getName(),
     rInitMethod: MCpiResultsSerialised.init,
     rCollectMethod: MCpiResultsSerialised.collector,
+    rFinaliseData: [10],
     rFinaliseMethod: MCpiResultsSerialised.finalise
 )
 

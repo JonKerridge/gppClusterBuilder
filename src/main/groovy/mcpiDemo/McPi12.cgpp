@@ -2,14 +2,14 @@ package mcpiDemo
 
 import groovyParallelPatterns.DataDetails
 import groovyParallelPatterns.ResultDetails
+import groovyParallelPatterns.cluster.connectors.List2Net
+import groovyParallelPatterns.cluster.connectors.NetInputs2List
 import groovyParallelPatterns.cluster.connectors.NodeRequestingFanAny
 import groovyParallelPatterns.cluster.connectors.NodeRequestingFanList
-import groovyParallelPatterns.cluster.connectors.NodeRequestingParCastList
-import groovyParallelPatterns.cluster.connectors.NodeRequestingSeqCastList
-import groovyParallelPatterns.cluster.connectors.OneNodeRequestedCastList
 import groovyParallelPatterns.cluster.connectors.OneNodeRequestedList
 import groovyParallelPatterns.connectors.reducers.AnyFanOne
 import groovyParallelPatterns.connectors.reducers.ListFanOne
+import groovyParallelPatterns.connectors.reducers.ListMergeOne
 import groovyParallelPatterns.functionals.groups.AnyGroupAny
 import groovyParallelPatterns.functionals.groups.ListGroupList
 import groovyParallelPatterns.terminals.Collect
@@ -36,17 +36,17 @@ def emit = new Emit (
     eDetails: emitDetails
 )
 
-def onrcl = new OneNodeRequestedCastList()
+def onrl = new OneNodeRequestedList()
 
 //@cluster clusters
 
-def nrscl = new NodeRequestingParCastList()
+def nrfl = new NodeRequestingFanList()
 
 def group = new ListGroupList(
     workers: cores,
     function: SerializedMCpiData.withinOp
 )
-def lfo = new ListFanOne()
+def l2n = new List2Net()
 
 //@collect
 
@@ -54,13 +54,13 @@ def resultDetails = new ResultDetails(
     rName: MCpiResultsSerialised.getName(),
     rInitMethod: MCpiResultsSerialised.init,
     rCollectMethod: MCpiResultsSerialised.collector,
-    rFinaliseData: [80],
+    rFinaliseData: [10],
     rFinaliseMethod: MCpiResultsSerialised.finalise
 )
 
-def afo = new AnyFanOne(
-    sources: clusters
-)
+def ni2l = new NetInputs2List()
+
+def lfo = new ListFanOne()
 
 def collector = new Collect(
     rDetails: resultDetails

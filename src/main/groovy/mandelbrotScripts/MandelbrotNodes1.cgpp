@@ -1,4 +1,4 @@
-package mcpiDemo
+package mandelbrotScripts
 
 import groovyParallelPatterns.DataDetails
 import groovyParallelPatterns.ResultDetails
@@ -8,54 +8,50 @@ import groovyParallelPatterns.connectors.reducers.AnyFanOne
 import groovyParallelPatterns.functionals.groups.AnyGroupAny
 import groovyParallelPatterns.terminals.Collect
 import groovyParallelPatterns.terminals.Emit
+import mandelbrotDemo.MandelbrotLine
+import mandelbrotDemo.SerializedMandelbrotLine
+import mandelbrotDemo.MandelbrotLineCollect
 
-// number of workers on each node
-int cores = 4
-// number of clusters
-int clusters = 2 //worker nodes
+
+int cores = 4  // number of workers on each node
+int clusters = 1 // number of clusters
+int maxIterations = 100
+int width  = 350                //1400   700        350
+int height = 200                //800    400        200
+double pixelDelta = 0.01        //0.0025 0.005      0.01
 //@emit 192.168.1.176
-
 def emitDetails = new DataDetails(
-    dName: MCpiData.getName(),
-    dInitMethod: MCpiData.init,
-    dInitData: [10],
-    dCreateMethod: MCpiData.create,
-    dCreateData: [100000]
+    dName: MandelbrotLine.getName(),
+    dInitMethod: MandelbrotLine.init,
+    dInitData: [width, height, pixelDelta, maxIterations],
+    dCreateMethod: MandelbrotLine.create
 )
-
 def emit = new Emit (
     eDetails: emitDetails
 )
-
 def onrl = new OneNodeRequestedList()
-
 //@cluster clusters
-
 def nrfa = new NodeRequestingFanAny(
     destinations: cores
 )
 def group = new AnyGroupAny(
     workers: cores,
-    function: SerializedMCpiData.withinOp
+    function: SerializedMandelbrotLine.calcColour
 )
 def afo1 = new AnyFanOne(
     sources: cores
 )
-
 //@collect
-
 def resultDetails = new ResultDetails(
-    rName: MCpiResultsSerialised.getName(),
-    rInitMethod: MCpiResultsSerialised.init,
-    rCollectMethod: MCpiResultsSerialised.collector,
+    rName: MandelbrotLineCollect.getName(),
+    rInitMethod: MandelbrotLineCollect.init,
+    rCollectMethod: MandelbrotLineCollect.collector,
     rFinaliseData: [10],
-    rFinaliseMethod: MCpiResultsSerialised.finalise
+    rFinaliseMethod: MandelbrotLineCollect.finalise
 )
-
-def afo2 = new AnyFanOne(
+def afo = new AnyFanOne(
     sources: clusters
 )
-
 def collector = new Collect(
     rDetails: resultDetails
 )

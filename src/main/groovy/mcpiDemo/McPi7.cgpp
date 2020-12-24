@@ -52,6 +52,7 @@ def resultDetails = new ResultDetails(
     rName: MCpiResultsSerialised.getName(),
     rInitMethod: MCpiResultsSerialised.init,
     rCollectMethod: MCpiResultsSerialised.collector,
+    rFinaliseData: [20],
     rFinaliseMethod: MCpiResultsSerialised.finalise
 )
 

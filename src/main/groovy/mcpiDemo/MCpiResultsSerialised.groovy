@@ -24,6 +24,7 @@ class MCpiResultsSerialised extends groovyParallelPatterns.DataClass {
 //    println """Total Iterations: $iterationSum Points Within : $withinSum pi Value :$pi"""
 //    println "Math value of pi is ${Math.PI}"
     println "pi = $pi from $recordsRead records"
+    assert recordsRead == p[0]:"Records read $recordsRead does not match expected ${p[0]}"
     return completedOK
   }
   /**
