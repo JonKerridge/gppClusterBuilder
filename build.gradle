@@ -21,7 +21,7 @@ version '1.0.2'
 
 // used for local testing of new version
 def jcspLib = "C:/jcspLib"
-def gppLibraryJarFile = "groovyParallelPatterns-1.0.8.jar"
+def gppLibraryJarFile = "groovyParallelPatterns-1.0.9.jar"
 //def gppBuilderJarFile = "gppBuilder-1.0.7.jar"
 
 apply plugin: 'groovy'
@@ -109,12 +109,12 @@ bintray {
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:3.0.5'
+    compile 'org.codehaus.groovy:groovy-all:3.0.7'
     compile 'cspforjava:jcsp:1.1.0'
     compile 'groovyJCSP:groovyJCSP:1.1.5'
     compile "gppBuilder:gppBuilder:1.0.6"
-    compile 'groovyParallelPatterns:groovyParallelPatterns:1.0.6'
-//    compile fileTree(dir: "$jcspLib", include: ["$gppLibraryJarFile"])
+//    compile 'groovyParallelPatterns:groovyParallelPatterns:1.0.6'
+    compile fileTree(dir: "$jcspLib", include: ["$gppLibraryJarFile"])
 
 }
 

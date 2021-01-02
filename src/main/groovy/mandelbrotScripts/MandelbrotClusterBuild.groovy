@@ -3,7 +3,8 @@ package mandelbrotScripts
 import gppClusterBuilder.CGPPbuilder
 
 def builder = new CGPPbuilder()
-String fileRoot = "D:\\IJGradle\\gppClusterBuilder\\src\\main\\groovy\\mandelbrotScripts\\"
+String fileRoot = "./"
 
-builder.runClusterBuilder("${fileRoot}MandelbrotNodes1")
+builder.runClusterBuilder("${fileRoot}ClusterMandelbrot1")
+builder.runClusterBuilder("${fileRoot}ClusterGUIMandelbrot1")
 

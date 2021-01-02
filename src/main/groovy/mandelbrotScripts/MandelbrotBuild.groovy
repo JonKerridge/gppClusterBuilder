@@ -4,7 +4,7 @@ import gppBuilder.GPPbuilder
 import gppClusterBuilder.CGPPbuilder
 
 def builder = new GPPbuilder()
-String fileRoot = "D:\\IJGradle\\gppClusterBuilder\\src\\main\\groovy\\mandelbrotScripts\\"
+String fileRoot = "./"
 
-builder.runBuilder("${fileRoot}RunMandelbrotLine")
-builder.runBuilder("${fileRoot}RunMandelbrotLineNoGUI")
+builder.runBuilder("${fileRoot}MandelbrotGUI")
+builder.runBuilder("${fileRoot}MandelbrotNoGUI")

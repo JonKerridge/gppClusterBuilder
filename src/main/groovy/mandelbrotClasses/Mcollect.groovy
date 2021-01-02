@@ -1,14 +1,14 @@
-package mandelbrotDemo
+package mandelbrotClasses
 
-class MandelbrotLineCollect extends groovyParallelPatterns.DataClass {
+class Mcollect extends groovyParallelPatterns.DataClass {
 
   int blackCount = 0
   int whiteCount = 0
   int points = 0
 
-  static final String init = "initClass"
-  static final String collector = "collector"
-  static final String finalise = "finalise"
+  static String init = "initClass"
+  static String collector = "collector"
+  static String finalise = "finalise"
 
   int initClass ( List d){
     return completedOK
@@ -19,15 +19,14 @@ class MandelbrotLineCollect extends groovyParallelPatterns.DataClass {
     return completedOK
   }
 
-  int collector( def o){
-    def ml = o
-    def colour = ml.colour
-    int width = colour.size()
+  int collector( Mdata ml){
+    int width = ml.colour.size()
     0.upto(width-1){ int w->
       points = points + 1
-      if (colour[w] == ml.WHITE) whiteCount = whiteCount + 1
+      if (ml.colour[w] == ml.WHITE) whiteCount = whiteCount + 1
       else blackCount = blackCount + 1
     }
     return completedOK
   }
+
 }

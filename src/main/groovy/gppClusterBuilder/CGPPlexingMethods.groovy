@@ -816,6 +816,7 @@ class CGPPlexingMethods {
         !(scriptText[scriptCurrentLine] =~ /List/)) scriptCurrentLine++
     collectFirstProc = scriptCurrentLine
     if (scriptText[scriptCurrentLine] =~ /List/ ) collectByList = true
+//    println "collect: $scriptCurrentLine, $collectByList, ${scriptText[scriptCurrentLine]}"
   } // end of extractFirstLastProcs
 
   // channel processing closures

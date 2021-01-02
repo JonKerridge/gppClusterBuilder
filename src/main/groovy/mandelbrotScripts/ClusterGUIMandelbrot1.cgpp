@@ -1,0 +1,61 @@
+package mandelbrotScripts
+
+import groovyParallelPatterns.DataDetails
+import groovyParallelPatterns.ResultDetails
+import groovyParallelPatterns.cluster.connectors.NodeRequestingFanAny
+import groovyParallelPatterns.cluster.connectors.OneNodeRequestedList
+import groovyParallelPatterns.connectors.reducers.AnyFanOne
+import groovyParallelPatterns.functionals.groups.AnyGroupAny
+import groovyParallelPatterns.terminals.CollectUI
+import groovyParallelPatterns.terminals.Emit
+import mandelbrotClasses.Mdata
+import mandelbrotClasses.Mgui
+
+import java.awt.Color
+
+int cores = 4  // number of workers on each node
+int clusters = 1 // number of clusters
+int maxIterations = 100
+int width  = 350                //1400   700   350
+int height = 200                // 800   400   200
+
+//@emit 192.168.1.176
+
+def emitDetails = new DataDetails(
+    dName: Mdata.getName(),
+    dInitMethod: Mdata.initialiseClass,
+    dInitData: [width, maxIterations],
+    dCreateMethod: Mdata.createInstance
+)
+def emit = new Emit (
+    eDetails: emitDetails
+)
+def onrl = new OneNodeRequestedList()
+
+//@cluster clusters
+
+def nrfa = new NodeRequestingFanAny(
+    destinations: cores
+)
+def group = new AnyGroupAny(
+    workers: cores,
+    function: Mdata.calculate
+)
+def afo1 = new AnyFanOne(
+    sources: cores )
+
+//@collect
+
+def resultDetails = new ResultDetails(
+    rName: Mgui.getName(),
+    rInitMethod: Mgui.init,
+    rInitData: [width, height, Color.CYAN],
+    rCollectMethod: Mgui.updateDisplay,
+    rFinaliseMethod: Mgui.finalise
+)
+def afo = new AnyFanOne(
+    sources: clusters
+)
+def collector = new CollectUI(
+    guiDetails: resultDetails
+)
