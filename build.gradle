@@ -38,7 +38,7 @@ artifacts {
 
 publishing {
     publications {
-        myPublication(MavenPublication) {
+        gppCluster(MavenPublication) {
             from components.java
             artifact sourcesJar
             artifact javadocJar
@@ -48,10 +48,10 @@ publishing {
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:3.0.7'
-    compile 'cspforjava:jcsp:1.1.0'
-    compile 'groovyJCSP:groovyJCSP:1.1.6'
-    compile "gppBuilder:gppBuilder:1.1.0"
-    compile 'groovyParallelPatterns:groovyParallelPatterns:1.1.0'
+    compile 'cspforjava:jcsp:1.1.8'
+    compile 'groovyJCSP:groovyJCSP:1.1.8'
+    compile "gppBuilder:gppBuilder:1.1.11"
+    compile 'groovyParallelPatterns:groovyParallelPatterns:1.1.11'
 }
 
 
