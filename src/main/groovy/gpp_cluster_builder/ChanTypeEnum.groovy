@@ -1,4 +1,4 @@
-package gppClusterBuilder;
+package gpp_cluster_builder;
 
 /**
  * ChanTypeEnum enumerates the different types of communication that a GPP process can use.

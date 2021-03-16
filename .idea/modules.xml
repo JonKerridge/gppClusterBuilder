@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/gppClusterBuilder.iml" filepath="$PROJECT_DIR$/.idea/gppClusterBuilder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gppClusterBuilder.test.iml" filepath="$PROJECT_DIR$/.idea/modules/gppClusterBuilder.test.iml" />
     </modules>
   </component>
 </project>

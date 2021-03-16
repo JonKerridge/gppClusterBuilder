@@ -1,5 +1,5 @@
 /**
- * The program gppClusterBuilder takes a source file that uses components from the GPP Library
+ * The program gpp_cluster_builder takes a source file that uses components from the GPP Library
  * and transforms them into a collection of runnable Groovy scripts
  * to be run on a collection of workstations.<p>
  * The program expects a single argument which is the full path name of the source file
@@ -23,4 +23,4 @@
  *
  */
 
-package gppClusterBuilder;
+package gpp_cluster_builder;

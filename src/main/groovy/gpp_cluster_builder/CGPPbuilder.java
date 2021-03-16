@@ -1,4 +1,4 @@
-package gppClusterBuilder;
+package gpp_cluster_builder;
 
 
 import java.util.Scanner;
@@ -111,7 +111,7 @@ public class CGPPbuilder {
      */
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
-        String fileRoot = "D:\\IJGradle\\gppClusterBuilder\\src\\main\\groovy\\mcpiDemo\\";
+        String fileRoot = "D:\\IJGradle\\gpp_cluster_builder\\src\\main\\groovy\\mcpiDemo\\";
         System.out.println("Name of File to Build? (exclude .cgpp suffix)");
         String fileName = scan.nextLine();
         CGPPlexFileHanding cgppLexer = new CGPPlexFileHanding();

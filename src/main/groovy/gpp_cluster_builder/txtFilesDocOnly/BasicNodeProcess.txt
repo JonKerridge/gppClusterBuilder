@@ -1,7 +1,7 @@
 package baseFiles
 
-import gppClusterBuilder.LoaderConstants
-import gppClusterBuilder.NodeConnection
+import gpp_cluster_builder.LoaderConstants
+import gpp_cluster_builder.NodeConnection
 import jcsp.lang.CSProcess
 import jcsp.net2.*
 

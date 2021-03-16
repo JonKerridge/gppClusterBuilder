@@ -1,4 +1,4 @@
-package gppClusterBuilder
+package gpp_cluster_builder
 
 class CGPPlexingMethods {
 
@@ -22,8 +22,8 @@ class CGPPlexingMethods {
   List <String> nodeLoaderText = [
       'package baseFiles',
       ' ',
-      'import gppClusterBuilder.LoaderConstants',
-      'import groovyJCSP.*',
+      'import gpp_cluster_builder.LoaderConstants',
+      'import groovy_jcsp.*',
       'import jcsp.lang.*',
       'import jcsp.net2.*',
       'import jcsp.net2.mobile.*',
@@ -63,8 +63,8 @@ class CGPPlexingMethods {
   List <String> nodeProcessText = [
       'package baseFiles',
       ' ',
-      'import gppClusterBuilder.LoaderConstants',
-      'import gppClusterBuilder.NodeConnection',
+      'import gpp_cluster_builder.LoaderConstants',
+      'import gpp_cluster_builder.NodeConnection',
       'import jcsp.lang.CSProcess',
       'import jcsp.net2.*',
       ' ',
@@ -111,8 +111,8 @@ class CGPPlexingMethods {
   List <String> hostLoaderText = [
       'package baseFiles',
       ' ',
-      'import gppClusterBuilder.LoaderConstants',
-      'import groovyJCSP.*',
+      'import gpp_cluster_builder.LoaderConstants',
+      'import groovy_jcsp.*',
       'import jcsp.net2.*',
       'import jcsp.net2.mobile.*',
       'import jcsp.net2.tcpip.*',
@@ -185,7 +185,7 @@ class CGPPlexingMethods {
   List <String> hostProcessText = [
       'package baseFiles',
       ' ',
-      'import gppClusterBuilder.LoaderConstants',
+      'import gpp_cluster_builder.LoaderConstants',
       'import jcsp.lang.*',
       'import jcsp.net2.*',
       ' ',
@@ -311,17 +311,17 @@ class CGPPlexingMethods {
 
     // copy package line and jcsp imports to output script texts
     nodeLoaderOutText << scriptText[0] + "\n"
-    nodeLoaderOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
-    nodeLoaderOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
+    nodeLoaderOutText << "import jcsp.lang.*\nimport groovy_jcsp.*\nimport jcsp.net2.*\n"
+    nodeLoaderOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gpp_cluster_builder.*\n"
     nodeProcessOutText << scriptText[0] + "\n"
-    nodeProcessOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
-    nodeProcessOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
+    nodeProcessOutText << "import jcsp.lang.*\nimport groovy_jcsp.*\nimport jcsp.net2.*\n"
+    nodeProcessOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gpp_cluster_builder.*\n"
     hostLoaderOutText << scriptText[0] + "\n"
-    hostLoaderOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
-    hostLoaderOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
+    hostLoaderOutText << "import jcsp.lang.*\nimport groovy_jcsp.*\nimport jcsp.net2.*\n"
+    hostLoaderOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gpp_cluster_builder.*\n"
     hostProcessOutText << scriptText[0] + "\n"
-    hostProcessOutText << "import jcsp.lang.*\nimport groovyJCSP.*\nimport jcsp.net2.*\n"
-    hostProcessOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gppClusterBuilder.*\n"
+    hostProcessOutText << "import jcsp.lang.*\nimport groovy_jcsp.*\nimport jcsp.net2.*\n"
+    hostProcessOutText << "import jcsp.net2.mobile.*\nimport jcsp.net2.tcpip.*\nimport gpp_cluster_builder.*\n"
 
     println "App Name is $appName"
   } // end of getInputs

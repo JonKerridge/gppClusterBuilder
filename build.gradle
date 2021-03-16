@@ -1,9 +1,9 @@
 apply plugin: 'groovy'
-apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-group 'gppClusterBuilder'
+group 'jonkerridge'
 version '1.1.0'
 
 // version 1.0.1 was the initial working version
@@ -13,45 +13,79 @@ version '1.1.0'
 // version 1.0.3 uses groovyParallelPatterns.1.0.9, which removed the need for explicit serialization
 
 // used for local testing of new version
-//version 1.1.0 used for GitHub build
+//version 1.1.0 used for GitHub Package build using libraries with version 1.1.12
 
 
 repositories {
     mavenCentral()
-    mavenLocal()
-}
-
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
-    archiveClassifier.set( "sources")
-}
-
-task javadocJar(type: Jar) {
-    from javadoc.destinationDir
-    from groovydoc.destinationDir
-    archiveClassifier.set("javadoc")
-}
-
-artifacts {
-    archives sourcesJar, javadocJar
-}
-
-publishing {
-    publications {
-        gppCluster(MavenPublication) {
-            from components.java
-            artifact sourcesJar
-            artifact javadocJar
+    maven { // to download the jonkerridge.groovy_jcsp library
+        name = "GitHub"
+        url = "https://maven.pkg.github.com/JonKerridge/groovyJCSP"
+        credentials {
+            username = project.findProperty("gpr.user")
+            password = project.findProperty("gpr.key")
+        }
+    }
+    maven { // to download the cspforjava.jcsp library
+        name = "GitHub"
+        url = "https://maven.pkg.github.com/CSPforJAVA/jcsp"
+        credentials {
+            username = project.findProperty("gpr.user")
+            password = project.findProperty("gpr.key")
+        }
+    }
+    maven { // to download the jonkerridge.groovy_parallel_patterns library
+        name = "GitHub"
+        url = "https://maven.pkg.github.com/JonKerridge/GPP_Library"
+        credentials {
+            username = project.findProperty("gpr.user")
+            password = project.findProperty("gpr.key")
+        }
+    }
+    maven { // to download the jonkerridge.gpp_builder library
+        name = "GitHub"
+        url = "https://maven.pkg.github.com/JonKerridge/GPP_Builder"
+        credentials {
+            username = project.findProperty("gpr.user")
+            password = project.findProperty("gpr.key")
         }
     }
 }
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:3.0.7'
-    compile 'cspforjava:jcsp:1.1.8'
-    compile 'groovyJCSP:groovyJCSP:1.1.8'
-    compile "gppBuilder:gppBuilder:1.1.11"
-    compile 'groovyParallelPatterns:groovyParallelPatterns:1.1.11'
+    compile 'cspforjava:jcsp:1.1.9'
+    compile 'jonkerridge:groovy_jcsp:1.1.9'
+    compile "jonkerridge:gpp_builder:1.1.12"
+    compile 'jonkerridge:groovy_parallel_patterns:1.1.12'
 }
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    archiveClassifier.set( "sources")
+}
+artifacts {
+    archives sourcesJar
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHub"
+            url = "https://maven.pkg.github.com/JonKerridge/gppClusterBuilder"
+            credentials {
+                username = project.findProperty("gpr.user")
+                password = project.findProperty("gpr.key")
+            }
+        }
+    }
+    publications {
+        Cbuilder(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+        }
+    }
+}
+
+
 
 

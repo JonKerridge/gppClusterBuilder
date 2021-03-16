@@ -1,4 +1,4 @@
-package gppClusterBuilder
+package gpp_cluster_builder
 
 import jcsp.net2.NetChannelInput
 
